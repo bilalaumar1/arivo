@@ -6,6 +6,7 @@ import { getWalletBalance } from "@/lib/wallet";
 import { sendUSDC } from "@/lib/sendUSDC";
 import { sendEURC } from "@/lib/sendEURC";
 import { getProfileByArivoId } from "@/lib/profile";
+import { useToast } from "../toast/ToastProvider";
 import { publicClient } from "@/lib/publicClient";
 
 import {
@@ -19,7 +20,6 @@ import {
   ArrowLeft,
   Wallet,
   ChevronDown,
-  Check,
   CheckCircle2,
   ArrowRight,
 } from "lucide-react";
@@ -52,6 +52,7 @@ const TOKEN_ADDRESSES = {
 
 export default function SendPage() {
   const { user } = usePrivy();
+  const { success, error: toastError } = useToast();
 
   const [method, setMethod] = useState<"arivo" | "wallet">("arivo");
 
@@ -60,47 +61,15 @@ export default function SendPage() {
   const [usdcBalance, setUsdcBalance] = useState("0.00");
   const [eurcBalance, setEurcBalance] = useState("0.00");
 
-  const loadBalances = useCallback(async () => {
-    const address = user?.wallet?.address as `0x${string}` | undefined;
-
-    if (!address) {
-      setUsdcBalance("0.00");
-      setEurcBalance("0.00");
-      return;
-    }
-
-    try {
-      const usdc = await getWalletBalance(address);
-      setUsdcBalance(Number(usdc || 0).toFixed(2));
-      setEurcBalance("0.00");
-    } catch (error) {
-      console.error("Failed to load wallet balance:", error);
-      setUsdcBalance("0.00");
-      setEurcBalance("0.00");
-    }
-  }, [user?.wallet?.address]);
-
-  useEffect(() => {
-    loadBalances();
-
-    const refresh = () => loadBalances();
-    window.addEventListener("refreshBalance", refresh);
-
-    return () => {
-      window.removeEventListener("refreshBalance", refresh);
-    };
-  }, [loadBalances]);
-
   const [recipient, setRecipient] = useState("");
-
   const [amount, setAmount] = useState("");
 
   const [openAsset, setOpenAsset] = useState(false);
-
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
   const [error, setError] = useState("");
+
   const [recipientProfile, setRecipientProfile] = useState<{
     username: string;
     avatar: string;
@@ -111,20 +80,91 @@ export default function SendPage() {
   const [networkFee, setNetworkFee] = useState("—");
   const [feeLoading, setFeeLoading] = useState(false);
 
-  const availableBalance =
-  asset.symbol === "USDC"
-    ? usdcBalance
-    : eurcBalance;
+  // =========================================================
+  // LOAD RECIPIENT FROM CHAT
+  // /send?address=0x...
+  // =========================================================
 
-const isValid =
-  recipient.trim().length > 0 &&
-  Number(amount) > 0 &&
-  Number(amount) <= Number(availableBalance);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const address = params.get("address");
+
+    if (!address) return;
+
+    const trimmedAddress = address.trim();
+
+    if (
+      trimmedAddress.startsWith("0x") &&
+      trimmedAddress.length === 42
+    ) {
+      setMethod("wallet");
+      setRecipient(trimmedAddress);
+      setError("");
+      setShowConfirmation(false);
+    }
+  }, []);
+
+  // =========================================================
+  // LOAD BALANCES
+  // =========================================================
+
+  const loadBalances = useCallback(async () => {
+    const address =
+      user?.wallet?.address as `0x${string}` | undefined;
+
+    if (!address) {
+      setUsdcBalance("0.00");
+      setEurcBalance("0.00");
+      return;
+    }
+
+    try {
+      const usdc = await getWalletBalance(address);
+
+      setUsdcBalance(Number(usdc || 0).toFixed(2));
+      setEurcBalance("0.00");
+    } catch (error) {
+      console.error("Failed to load wallet balance:", error);
+
+      setUsdcBalance("0.00");
+      setEurcBalance("0.00");
+    }
+  }, [user?.wallet?.address]);
+
+  useEffect(() => {
+    loadBalances();
+
+    const refresh = () => loadBalances();
+
+    window.addEventListener("refreshBalance", refresh);
+
+    return () => {
+      window.removeEventListener("refreshBalance", refresh);
+    };
+  }, [loadBalances]);
+
+  // =========================================================
+  // BALANCE
+  // =========================================================
+
+  const availableBalance =
+    asset.symbol === "USDC"
+      ? usdcBalance
+      : eurcBalance;
+
+  const isValid =
+    recipient.trim().length > 0 &&
+    Number(amount) > 0 &&
+    Number(amount) <= Number(availableBalance);
 
   function handleMax() {
     setAmount(availableBalance);
     setError("");
   }
+
+  // =========================================================
+  // NETWORK FEE
+  // =========================================================
 
   async function estimateNetworkFee(
     walletAddress: `0x${string}`
@@ -155,9 +195,7 @@ const isValid =
 
       const gasPrice = await publicClient.getGasPrice();
 
-      // Arc Testnet uses USDC as the native gas token with 18 decimals.
-      // gas and gasPrice are returned in wei-like native units, so the
-      // fee MUST be formatted with 18 decimals, not USDC's ERC-20 6 decimals.
+      // Arc Testnet uses USDC as native gas token.
       const fee = gas * gasPrice;
 
       setNetworkFee(
@@ -209,27 +247,37 @@ const isValid =
     availableBalance,
   ]);
 
+  // =========================================================
+  // CONTINUE
+  // =========================================================
+
   async function handleContinue() {
     setError("");
 
     if (!recipient.trim()) {
-      setError(
+      const message =
         method === "arivo"
           ? "Please enter an Arivo ID."
-          : "Please enter a wallet address."
-      );
+          : "Please enter a wallet address.";
+
+      setError(message);
+      toastError("Recipient required", message);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
-      setError("Please enter a valid amount.");
+      const message = "Please enter a valid amount.";
+      setError(message);
+      toastError("Invalid amount", message);
       return;
     }
 
     if (Number(amount) > Number(availableBalance)) {
-      setError(
-        `Insufficient balance. Available: ${availableBalance} ${asset.symbol}.`
-      );
+      const message =
+        `Insufficient balance. Available: ${availableBalance} ${asset.symbol}.`;
+
+      setError(message);
+      toastError("Insufficient balance", message);
       return;
     }
 
@@ -238,15 +286,21 @@ const isValid =
 
       if (method === "arivo") {
         const arivoId = recipient.trim().toUpperCase();
-        const foundProfile = await getProfileByArivoId(arivoId);
+
+        const foundProfile =
+          await getProfileByArivoId(arivoId);
 
         if (!foundProfile) {
-          setError("Arivo ID not found.");
+          const message = "Arivo ID not found.";
+          setError(message);
+          toastError("Recipient not found", message);
           return;
         }
 
         if (!foundProfile.wallet) {
-          setError("This Arivo ID has no wallet.");
+          const message = "This Arivo ID has no wallet.";
+          setError(message);
+          toastError("Recipient unavailable", message);
           return;
         }
 
@@ -263,7 +317,9 @@ const isValid =
           !walletAddress.startsWith("0x") ||
           walletAddress.length !== 42
         ) {
-          setError("Invalid wallet address.");
+          const message = "Invalid wallet address.";
+          setError(message);
+          toastError("Invalid wallet address", message);
           return;
         }
       }
@@ -271,11 +327,20 @@ const isValid =
       setShowConfirmation(true);
     } catch (error) {
       console.error("Recipient lookup failed:", error);
-      setError("Could not find the recipient. Please try again.");
+
+      const message =
+        "Could not find the recipient. Please try again.";
+
+      setError(message);
+      toastError("Recipient lookup failed", message);
     } finally {
       setLookingUp(false);
     }
   }
+
+  // =========================================================
+  // CONFIRM SEND
+  // =========================================================
 
   async function handleConfirmSend() {
     setError("");
@@ -287,7 +352,9 @@ const isValid =
 
       if (method === "arivo") {
         if (!recipientProfile) {
-          setError("Recipient profile not found.");
+          const message = "Recipient profile not found.";
+          setError(message);
+          toastError("Recipient not found", message);
           return;
         }
 
@@ -298,7 +365,9 @@ const isValid =
         !walletAddress.startsWith("0x") ||
         walletAddress.length !== 42
       ) {
-        setError("Invalid wallet address.");
+        const message = "Invalid wallet address.";
+        setError(message);
+        toastError("Invalid wallet address", message);
         return;
       }
 
@@ -316,32 +385,51 @@ const isValid =
         );
       }
 
-      console.log(`${asset.symbol} Transaction Hash:`, hash);
+      console.log(
+        `${asset.symbol} Transaction Hash:`,
+        hash
+      );
 
-      // Get the REAL fee paid by the wallet from the confirmed transaction.
-      // Arc uses 18 decimals for its native USDC gas token.
+      success(
+        `${asset.symbol} sent successfully`,
+        `${Number(amount).toFixed(2)} ${asset.symbol} was sent to the recipient.`
+      );
+
+      // Get the real transaction fee.
       try {
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: hash as `0x${string}`,
-        });
+        const receipt =
+          await publicClient.waitForTransactionReceipt({
+            hash: hash as `0x${string}`,
+          });
 
         const gasUsed = receipt.gasUsed;
-        const effectiveGasPrice = receipt.effectiveGasPrice;
+        const effectiveGasPrice =
+          receipt.effectiveGasPrice;
 
-        if (gasUsed !== undefined && effectiveGasPrice !== undefined) {
-          const actualFee = gasUsed * effectiveGasPrice;
+        if (
+          gasUsed !== undefined &&
+          effectiveGasPrice !== undefined
+        ) {
+          const actualFee =
+            gasUsed * effectiveGasPrice;
 
           const actualFeeFormatted = Number(
             formatUnits(actualFee, 18)
           ).toFixed(6);
 
-          console.log("Actual Arc network fee:", actualFeeFormatted, "USDC");
+          console.log(
+            "Actual Arc network fee:",
+            actualFeeFormatted,
+            "USDC"
+          );
 
-          // Keep the real fee available in the UI/state.
           setNetworkFee(actualFeeFormatted);
         }
       } catch (feeError) {
-        console.error("Failed to read actual transaction fee:", feeError);
+        console.error(
+          "Failed to read actual transaction fee:",
+          feeError
+        );
       }
 
       setRecipient("");
@@ -350,25 +438,38 @@ const isValid =
       setShowConfirmation(false);
       setError("");
 
-      window.dispatchEvent(new Event("refreshBalance"));
+      window.dispatchEvent(
+        new Event("refreshBalance")
+      );
     } catch (error) {
       console.error("Transaction failed:", error);
+
       setError(
         `${asset.symbol} transaction failed. Please try again.`
+      );
+
+      toastError(
+        `${asset.symbol} transaction failed`,
+        "Please try again."
       );
     } finally {
       setLoading(false);
     }
   }
 
+  // =========================================================
+  // UI
+  // =========================================================
+
   return (
     <div className="min-h-screen bg-[#111111] text-white">
 
-      {/* Header */}
+      {/* HEADER */}
 
       <header className="flex h-[88px] items-center border-b border-[#292929] px-8">
 
         <button
+          type="button"
           onClick={() => window.history.back()}
           className="mr-4 flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
         >
@@ -387,11 +488,11 @@ const isValid =
 
       </header>
 
-      {/* Main */}
+      {/* MAIN */}
 
       <main className="p-8">
 
-        <div className="grid grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-12 items-start gap-6">
 
           {/* LEFT */}
 
@@ -411,7 +512,7 @@ const isValid =
 
               </div>
 
-              {/* Send to */}
+              {/* SEND TO */}
 
               <div>
 
@@ -422,14 +523,20 @@ const isValid =
                 <div className="grid grid-cols-2 gap-3">
 
                   <button
-                    onClick={() => setMethod("arivo")}
+                    type="button"
+                    onClick={() => {
+                      setMethod("arivo");
+                      setRecipient("");
+                      setRecipientProfile(null);
+                      setError("");
+                      setShowConfirmation(false);
+                    }}
                     className={`rounded-2xl border p-5 text-left transition ${
                       method === "arivo"
                         ? "border-[#efe5d2] bg-[#efe5d2] text-black"
                         : "border-[#353535] bg-[#202020] text-white hover:border-[#555]"
                     }`}
                   >
-
                     <p className="font-semibold">
                       Arivo ID
                     </p>
@@ -443,18 +550,22 @@ const isValid =
                     >
                       Send to another Arivo user
                     </p>
-
                   </button>
 
                   <button
-                    onClick={() => setMethod("wallet")}
+                    type="button"
+                    onClick={() => {
+                      setMethod("wallet");
+                      setRecipientProfile(null);
+                      setError("");
+                      setShowConfirmation(false);
+                    }}
                     className={`rounded-2xl border p-5 text-left transition ${
                       method === "wallet"
                         ? "border-[#efe5d2] bg-[#efe5d2] text-black"
                         : "border-[#353535] bg-[#202020] text-white hover:border-[#555]"
                     }`}
                   >
-
                     <p className="font-semibold">
                       Wallet Address
                     </p>
@@ -468,14 +579,13 @@ const isValid =
                     >
                       Send directly to a wallet
                     </p>
-
                   </button>
 
                 </div>
 
               </div>
 
-              {/* Asset */}
+              {/* ASSET */}
 
               <div className="mt-7">
 
@@ -486,6 +596,7 @@ const isValid =
                 <div className="relative">
 
                   <button
+                    type="button"
                     onClick={() => setOpenAsset(!openAsset)}
                     className="flex w-full items-center justify-between rounded-2xl border border-[#353535] bg-[#202020] px-5 py-4 text-left transition hover:border-[#555]"
                   >
@@ -523,7 +634,9 @@ const isValid =
                     <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-[#353535] bg-[#202020] shadow-2xl">
 
                       {assets.map((item) => (
+
                         <button
+                          type="button"
                           key={item.symbol}
                           onClick={() => {
                             setAsset(item);
@@ -556,6 +669,7 @@ const isValid =
                           </div>
 
                         </button>
+
                       ))}
 
                     </div>
@@ -565,7 +679,7 @@ const isValid =
 
               </div>
 
-              {/* Recipient */}
+              {/* RECIPIENT */}
 
               <div className="mt-7">
 
@@ -577,9 +691,11 @@ const isValid =
 
                 <input
                   value={recipient}
-                  onChange={(e) =>
-                    setRecipient(e.target.value)
-                  }
+                  onChange={(e) => {
+                    setRecipient(e.target.value);
+                    setError("");
+                    setShowConfirmation(false);
+                  }}
                   placeholder={
                     method === "arivo"
                       ? "ARV-XXXX-XXXX"
@@ -590,7 +706,7 @@ const isValid =
 
               </div>
 
-              {/* Amount */}
+              {/* AMOUNT */}
 
               <div className="mt-7">
 
@@ -613,9 +729,11 @@ const isValid =
 
                   <input
                     value={amount}
-                    onChange={(e) =>
-                      setAmount(e.target.value)
-                    }
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      setError("");
+                      setShowConfirmation(false);
+                    }}
                     type="number"
                     min="0"
                     step="0.01"
@@ -639,7 +757,7 @@ const isValid =
 
               </div>
 
-              {/* Network */}
+              {/* NETWORK */}
 
               <div className="mt-7 flex items-center justify-between rounded-2xl border border-[#353535] bg-[#202020] px-5 py-4">
 
@@ -661,13 +779,15 @@ const isValid =
 
               </div>
 
-              {/* Continue */}
+              {/* ERROR */}
 
               {error && (
                 <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-[12px] text-red-300">
                   {error}
                 </div>
               )}
+
+              {/* CONTINUE */}
 
               <button
                 type="button"
@@ -680,18 +800,21 @@ const isValid =
                 }`}
               >
                 {lookingUp ? "Checking..." : "Continue"}
-                {!lookingUp && <span>→</span>}
+
+                {!lookingUp && (
+                  <span>→</span>
+                )}
               </button>
 
             </div>
 
           </section>
 
-          {/* RIGHT — STABLE SUMMARY */}
+          {/* RIGHT */}
 
-          <aside className="col-span-12 lg:col-span-4 lg:sticky lg:top-6 lg:self-start space-y-5">
+          <aside className="col-span-12 space-y-5 lg:sticky lg:top-6 lg:col-span-4 lg:self-start">
 
-            {/* Transfer Summary */}
+            {/* TRANSFER SUMMARY */}
 
             <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6">
 
@@ -710,17 +833,19 @@ const isValid =
                 </div>
 
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#303030] bg-[#202020]">
+
                   <Wallet
                     size={18}
                     className="text-zinc-400"
                   />
+
                 </div>
 
               </div>
 
               <div className="mt-6 space-y-5">
 
-                {/* Asset */}
+                {/* ASSET */}
 
                 <div className="flex items-center justify-between gap-5">
 
@@ -734,7 +859,7 @@ const isValid =
 
                 </div>
 
-                {/* Recipient */}
+                {/* RECIPIENT */}
 
                 <div className="flex items-center justify-between gap-5">
 
@@ -748,7 +873,7 @@ const isValid =
 
                 </div>
 
-                {/* Amount */}
+                {/* AMOUNT */}
 
                 <div className="flex items-center justify-between gap-5">
 
@@ -757,14 +882,15 @@ const isValid =
                   </span>
 
                   <span className="text-[13px] font-semibold text-white">
-                    {Number(amount || 0).toFixed(2)} {asset.symbol}
+                    {Number(amount || 0).toFixed(2)}{" "}
+                    {asset.symbol}
                   </span>
 
                 </div>
 
                 <div className="h-px bg-[#2a2a2a]" />
 
-                {/* Available balance */}
+                {/* BALANCE */}
 
                 <div className="flex items-center justify-between gap-5">
 
@@ -773,12 +899,13 @@ const isValid =
                   </span>
 
                   <span className="text-[13px] font-medium text-zinc-300">
-                    {Number(availableBalance || 0).toFixed(2)} {asset.symbol}
+                    {Number(availableBalance || 0).toFixed(2)}{" "}
+                    {asset.symbol}
                   </span>
 
                 </div>
 
-                {/* Network fee */}
+                {/* FEE */}
 
                 <div className="flex items-center justify-between gap-5">
 
@@ -787,16 +914,18 @@ const isValid =
                   </span>
 
                   <span className="text-[13px] font-medium text-zinc-300">
+
                     {feeLoading
                       ? "Estimating..."
                       : networkFee === "—"
                         ? "—"
                         : `${networkFee} USDC`}
+
                   </span>
 
                 </div>
 
-                {/* You will send */}
+                {/* YOU WILL SEND */}
 
                 <div className="rounded-2xl border border-[#303030] bg-[#202020] px-4 py-4">
 
@@ -807,7 +936,8 @@ const isValid =
                     </span>
 
                     <span className="text-[16px] font-semibold text-white">
-                      {Number(amount || 0).toFixed(2)} {asset.symbol}
+                      {Number(amount || 0).toFixed(2)}{" "}
+                      {asset.symbol}
                     </span>
 
                   </div>
@@ -818,7 +948,7 @@ const isValid =
 
             </div>
 
-            {/* Secure Transfer */}
+            {/* SECURE TRANSFER */}
 
             <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6">
 
@@ -869,51 +999,85 @@ const isValid =
 
       </main>
 
+      {/* CONFIRMATION MODAL */}
+
       {showConfirmation && (
+
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+
           <div className="w-full max-w-[480px] rounded-[24px] border border-[#333] bg-[#191919] p-6 shadow-2xl">
 
             <div className="mb-6">
+
               <h2 className="text-[20px] font-semibold text-white">
                 Review transfer
               </h2>
+
               <p className="mt-1 text-[13px] text-zinc-500">
                 Check the details before confirming the transaction.
               </p>
+
             </div>
 
             <div className="space-y-4 rounded-2xl border border-[#303030] bg-[#202020] p-5">
 
               <div className="flex items-center justify-between">
-                <span className="text-[13px] text-zinc-500">Asset</span>
+
+                <span className="text-[13px] text-zinc-500">
+                  Asset
+                </span>
+
                 <span className="text-[14px] font-semibold text-white">
                   {asset.symbol}
                 </span>
+
               </div>
 
               <div className="flex items-center justify-between gap-5">
-                <span className="text-[13px] text-zinc-500">Recipient</span>
+
+                <span className="text-[13px] text-zinc-500">
+                  Recipient
+                </span>
+
                 <span className="max-w-[260px] truncate text-right text-[13px] text-white">
-                  {method === "arivo" && recipientProfile
+
+                  {method === "arivo" &&
+                  recipientProfile
                     ? recipientProfile.arivo_id
                     : recipient}
+
                 </span>
+
               </div>
 
-              {method === "arivo" && recipientProfile && (
-                <div className="flex items-center justify-between gap-5">
-                  <span className="text-[13px] text-zinc-500">Wallet</span>
-                  <span className="max-w-[260px] truncate text-right text-[11px] text-zinc-400">
-                    {recipientProfile.wallet}
-                  </span>
-                </div>
-              )}
+              {method === "arivo" &&
+                recipientProfile && (
+
+                  <div className="flex items-center justify-between gap-5">
+
+                    <span className="text-[13px] text-zinc-500">
+                      Wallet
+                    </span>
+
+                    <span className="max-w-[260px] truncate text-right text-[11px] text-zinc-400">
+                      {recipientProfile.wallet}
+                    </span>
+
+                  </div>
+
+                )}
 
               <div className="flex items-center justify-between border-t border-[#303030] pt-4">
-                <span className="text-[13px] text-zinc-500">Amount</span>
-                <span className="text-[18px] font-semibold text-white">
-                  {Number(amount || 0).toFixed(2)} {asset.symbol}
+
+                <span className="text-[13px] text-zinc-500">
+                  Amount
                 </span>
+
+                <span className="text-[18px] font-semibold text-white">
+                  {Number(amount || 0).toFixed(2)}{" "}
+                  {asset.symbol}
+                </span>
+
               </div>
 
             </div>
@@ -944,14 +1108,23 @@ const isValid =
                 onClick={handleConfirmSend}
                 className="flex h-[54px] items-center justify-center gap-2 rounded-2xl bg-[#efe5d2] font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Sending..." : "Confirm & Send"}
-                {!loading && <ArrowRight size={17} />}
+
+                {loading
+                  ? "Sending..."
+                  : "Confirm & Send"}
+
+                {!loading && (
+                  <ArrowRight size={17} />
+                )}
+
               </button>
 
             </div>
 
           </div>
+
         </div>
+
       )}
 
     </div>

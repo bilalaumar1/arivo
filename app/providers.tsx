@@ -2,6 +2,7 @@
 
 import { PrivyProvider } from "@privy-io/react-auth";
 import { ReactNode } from "react";
+import { ToastProvider } from "@/components/toast/ToastProvider";
 
 export default function Providers({
   children,
@@ -21,7 +22,9 @@ export default function Providers({
         },
       }}
     >
-      {children}
+      <ToastProvider>
+        {children}
+      </ToastProvider>
     </PrivyProvider>
   );
 }

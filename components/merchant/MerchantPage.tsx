@@ -8,10 +8,12 @@ import { sendEURC } from "@/lib/sendEURC";
 import { publicClient } from "@/lib/publicClient";
 import { formatUnits } from "viem";
 import { createArivoOrder, updateArivoOrder } from "@/lib/orderStore";
+import { fulfillGiftCardOrder } from "@/lib/giftCardFulfillment";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Coins,
   CreditCard,
   Gift,
   Mail,
@@ -129,25 +131,33 @@ const internetPlans = [
   },
 ] as const;
 
-const giftCardPlans = [
-  {
-    id: "1m",
-    label: "1 month",
-    price: 5,
-  },
-  {
-    id: "3m",
-    label: "3 months",
-    price: 10,
-  },
-  {
-    id: "1y",
-    label: "1 year",
-    price: 48,
-  },
-] as const;
+const giftCardCatalog = {
+  Netflix: [
+    { id: "1m", label: "1 month", price: 5 },
+    { id: "3m", label: "3 months", price: 10 },
+    { id: "1y", label: "1 year", price: 48 },
+  ],
+  "Google Play": [
+    { id: "10", label: "$10", price: 10 },
+    { id: "25", label: "$25", price: 25 },
+    { id: "50", label: "$50", price: 50 },
+    { id: "100", label: "$100", price: 100 },
+  ],
+  Apple: [
+    { id: "10", label: "$10", price: 10 },
+    { id: "25", label: "$25", price: 25 },
+    { id: "50", label: "$50", price: 50 },
+    { id: "100", label: "$100", price: 100 },
+  ],
+  Steam: [
+    { id: "5", label: "$5", price: 5 },
+    { id: "10", label: "$10", price: 10 },
+    { id: "20", label: "$20", price: 20 },
+    { id: "50", label: "$50", price: 50 },
+  ],
+} as const;
 
-const giftCardBrands = ["Netflix", "Google Play", "Apple", "Steam"];
+const giftCardBrands = Object.keys(giftCardCatalog) as Array<keyof typeof giftCardCatalog>;
 
 const inputClass =
   "h-12 w-full rounded-xl border border-[#303030] bg-[#202020] px-4 text-[13px] text-white outline-none transition placeholder:text-zinc-600 focus:border-[#efe5d2] focus:bg-[#222222]";
@@ -185,9 +195,8 @@ export default function MerchantPage() {
   const [internetPlan, setInternetPlan] =
     useState<(typeof internetPlans)[number]["id"]>("1m");
 
-  const [giftBrand, setGiftBrand] = useState("Netflix");
-  const [giftPlan, setGiftPlan] =
-    useState<(typeof giftCardPlans)[number]["id"]>("1m");
+  const [giftBrand, setGiftBrand] = useState<keyof typeof giftCardCatalog>("Netflix");
+  const [giftPlan, setGiftPlan] = useState("1m");
 
   const [mobileAmount, setMobileAmount] =
     useState<number>(countries.dz.mobileAmounts[0]);
@@ -207,6 +216,7 @@ export default function MerchantPage() {
     "idle" | "sending" | "sent" | "failed"
   >("idle");
   const [emailError, setEmailError] = useState("");
+  const [giftCardCode, setGiftCardCode] = useState("");
 
 
   const paymentReceiver =
@@ -224,6 +234,7 @@ export default function MerchantPage() {
     internetPlans.find((plan) => plan.id === internetPlan) ??
     internetPlans[0];
 
+  const giftCardPlans = giftCardCatalog[giftBrand];
   const selectedGiftPlan =
     giftCardPlans.find((plan) => plan.id === giftPlan) ??
     giftCardPlans[0];
@@ -378,6 +389,7 @@ export default function MerchantPage() {
     setBillAmount("");
     setEmailStatus("idle");
     setEmailError("");
+    setGiftCardCode("");
 
     if (serviceId === "mobile") {
       setMobileAmount(countries[country].mobileAmounts[0]);
@@ -499,7 +511,10 @@ export default function MerchantPage() {
 
       const createdOrder = createArivoOrder({
         service: current.id,
-        serviceName: current.title,
+        serviceName:
+          current.id === "giftcards"
+            ? `${giftBrand} Gift Card`
+            : current.title,
         email,
         country:
           selectedService === "electricity" ||
@@ -521,15 +536,48 @@ export default function MerchantPage() {
         status: "payment_confirmed",
         fulfillmentNote:
           current.id === "giftcards"
-            ? "Payment confirmed. Waiting for gift-card provider fulfillment."
+            ? "Payment confirmed. Gift card delivery completed."
             : current.id === "electricity"
-              ? "Payment confirmed. Waiting for electricity provider fulfillment."
+              ? "Payment confirmed. Electricity bill payment recorded."
               : current.id === "internet"
-                ? "Payment confirmed. Waiting for internet provider fulfillment."
-                : "Payment confirmed. Waiting for recharge provider fulfillment.",
+                ? "Payment confirmed. Internet service payment recorded."
+                : "Payment confirmed. Mobile recharge payment recorded.",
       });
 
       setOrderId(createdOrder.id);
+
+      if (current.id === "giftcards") {
+        try {
+          const fulfillment = await fulfillGiftCardOrder(createdOrder);
+
+          if (fulfillment.success && fulfillment.code) {
+            setGiftCardCode(fulfillment.code);
+
+            updateArivoOrder(createdOrder.id, {
+              status: "fulfilled",
+              fulfillmentNote:
+                `Gift card fulfilled and delivered to ${email}.`,
+            });
+          } else {
+            updateArivoOrder(createdOrder.id, {
+              status: "processing",
+              fulfillmentNote:
+                `Payment confirmed. Gift card is still processing.`,
+            });
+          }
+        } catch (fulfillmentError) {
+          console.error(
+            "Gift card fulfillment failed:",
+            fulfillmentError
+          );
+
+          updateArivoOrder(createdOrder.id, {
+            status: "processing",
+            fulfillmentNote:
+              "Payment confirmed. Gift card fulfillment is still processing.",
+          });
+        }
+      }
 
       // Send the payment confirmation email after the blockchain payment
       // has been confirmed. Email failure must NOT mark the payment failed.
@@ -606,6 +654,7 @@ export default function MerchantPage() {
     setOrderId("");
     setEmailStatus("idle");
     setEmailError("");
+    setGiftCardCode("");
     closeCheckout();
   }
 
@@ -652,7 +701,7 @@ export default function MerchantPage() {
 
           <div className="hidden items-center gap-2 rounded-xl border border-[#303030] bg-[#191919] px-4 py-2 sm:flex">
             <ShieldCheck size={15} className="text-green-500" />
-            <span className="text-[12px] text-zinc-300">
+            <span className="text-[11px] text-zinc-300 sm:text-[12px]">
               Arc Testnet
             </span>
           </div>
@@ -698,7 +747,7 @@ export default function MerchantPage() {
                 Choose a service
               </h3>
 
-              <p className="mt-1 text-[12px] text-zinc-500">
+              <p className="mt-1 text-[11px] text-zinc-500 sm:text-[12px]">
                 Prices are shown in the service's native/local currency.
                 Payment is selected later.
               </p>
@@ -738,7 +787,7 @@ export default function MerchantPage() {
 
                       <div className="mt-7 border-t border-[#292929] pt-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-zinc-600">
+                          <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                             Checkout
                           </span>
                           <span className="text-[11px] font-medium text-zinc-300">
@@ -755,19 +804,22 @@ export default function MerchantPage() {
             <section className="mt-8 grid gap-4 md:grid-cols-3">
               {[
                 {
-                  icon: Receipt,
-                  title: "Native service pricing",
-                  text: "Bills and recharges can stay in the currency used by the service.",
+                  eyebrow: "SERVICES",
+                  icon: Coins,
+                  title: "Multi-currency",
+                  text: "Bills, top-ups and digital services stay in their native currency.",
                 },
                 {
+                  eyebrow: "PAYMENTS",
                   icon: CreditCard,
-                  title: "Payment at checkout",
-                  text: "USDC and EURC are payment assets, not the service's displayed price.",
+                  title: "USDC checkout",
+                  text: "Pay for services with USDC or EURC on Arc Testnet.",
                 },
                 {
+                  eyebrow: "ORDERS",
                   icon: ShieldCheck,
-                  title: "Confirm before fulfillment",
-                  text: "The provider should be fulfilled only after the Arc payment is confirmed.",
+                  title: "Verified fulfillment",
+                  text: "Every service is fulfilled only after on-chain payment confirmation.",
                 },
               ].map((item) => {
                 const Icon = item.icon;
@@ -775,19 +827,29 @@ export default function MerchantPage() {
                 return (
                   <div
                     key={item.title}
-                    className="rounded-[22px] border border-[#2d2d2d] bg-[#191919] p-5"
+                    className="group rounded-[24px] border border-[#2d2d2d] bg-[#171717] p-6 transition-colors duration-200 hover:border-[#3a3a3a]"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#303030] bg-[#202020]">
-                      <Icon size={17} className="text-zinc-400" />
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#303030] bg-[#1d1d1d]">
+                      <Icon
+                        size={20}
+                        strokeWidth={1.8}
+                        className="text-zinc-300"
+                      />
                     </div>
 
-                    <h4 className="mt-4 text-[13px] font-semibold">
-                      {item.title}
-                    </h4>
+                    <div className="mt-6">
+                      <p className="text-[10px] font-medium tracking-[0.18em] text-zinc-500">
+                        {item.eyebrow}
+                      </p>
 
-                    <p className="mt-1 text-[11px] leading-5 text-zinc-600">
-                      {item.text}
-                    </p>
+                      <h4 className="mt-2 text-[18px] font-semibold tracking-[-0.02em] text-white">
+                        {item.title}
+                      </h4>
+
+                      <p className="mt-2 text-[12px] leading-5 text-zinc-500">
+                        {item.text}
+                      </p>
+                    </div>
                   </div>
                 );
               })}
@@ -863,7 +925,7 @@ export default function MerchantPage() {
                   {paymentStep === "details" ? (
                     <>
                       <div className="mb-6">
-                        <p className="text-[11px] text-zinc-600">
+                        <p className="text-[10px] text-zinc-600 sm:text-[11px]">
                           Step 1 of 2
                         </p>
 
@@ -871,7 +933,7 @@ export default function MerchantPage() {
                           Service details
                         </h3>
 
-                        <p className="mt-1 text-[12px] text-zinc-500">
+                        <p className="mt-1 text-[11px] text-zinc-500 sm:text-[12px]">
                           Use the currency and details normally associated
                           with this service.
                         </p>
@@ -1018,7 +1080,7 @@ export default function MerchantPage() {
                                   }`}
                                 >
                                   <div>
-                                    <p className="text-[13px] font-semibold">
+    <p className="text-[13px] font-semibold">
                                       {plan.label}
                                     </p>
                                     <p
@@ -1131,9 +1193,10 @@ export default function MerchantPage() {
                                 <button
                                   key={brand}
                                   type="button"
-                                  onClick={() =>
-                                    setGiftBrand(brand)
-                                  }
+                                  onClick={() => {
+                                    setGiftBrand(brand);
+                                    setGiftPlan(giftCardCatalog[brand][0].id);
+                                  }}
                                   className={`rounded-xl border px-4 py-3 text-left text-[13px] transition ${
                                     giftBrand === brand
                                       ? "border-[#efe5d2] bg-[#efe5d2] text-black"
@@ -1153,7 +1216,7 @@ export default function MerchantPage() {
 
                           <div>
                             <label className="mb-2 block text-[12px] text-zinc-400">
-                              Subscription
+                              Available options
                             </label>
 
                             <div className="grid gap-2">
@@ -1171,7 +1234,7 @@ export default function MerchantPage() {
                                   }`}
                                 >
                                   <div>
-                                    <p className="text-[13px] font-semibold">
+    <p className="text-[13px] font-semibold">
                                       {plan.label}
                                     </p>
 
@@ -1232,7 +1295,7 @@ export default function MerchantPage() {
                   ) : (
                     <>
                       <div className="mb-6">
-                        <p className="text-[11px] text-zinc-600">
+                        <p className="text-[10px] text-zinc-600 sm:text-[11px]">
                           Step 2 of 2
                         </p>
 
@@ -1240,7 +1303,7 @@ export default function MerchantPage() {
                           Choose how to pay
                         </h3>
 
-                        <p className="mt-1 text-[12px] text-zinc-500">
+                        <p className="mt-1 text-[11px] text-zinc-500 sm:text-[12px]">
                           The service price stays in its native currency.
                           USDC and EURC are your payment assets.
                         </p>
@@ -1333,7 +1396,7 @@ export default function MerchantPage() {
 
                       <div className="mt-6 rounded-2xl border border-[#2d2d2d] bg-[#202020] p-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-zinc-600">
+                          <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                             Service
                           </span>
                           <span className="text-[11px] font-medium text-white">
@@ -1342,7 +1405,7 @@ export default function MerchantPage() {
                         </div>
 
                         <div className="mt-3 flex items-center justify-between">
-                          <span className="text-[11px] text-zinc-600">
+                          <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                             Service price
                           </span>
                           <span className="text-[11px] font-semibold text-white">
@@ -1352,7 +1415,7 @@ export default function MerchantPage() {
 
                         {current.id === "electricity" && (
                           <div className="mt-3 flex items-center justify-between">
-                            <span className="text-[11px] text-zinc-600">
+                            <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                               Bill account
                             </span>
                             <span className="max-w-[170px] truncate text-[11px] text-zinc-300">
@@ -1363,10 +1426,10 @@ export default function MerchantPage() {
 
                         {current.id === "internet" && (
                           <div className="mt-3 flex items-center justify-between">
-                            <span className="text-[11px] text-zinc-600">
+                            <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                               Plan
                             </span>
-                            <span className="text-[11px] text-zinc-300">
+                            <span className="text-[10px] text-zinc-300 sm:text-[11px]">
                               {selectedInternetPlan.label}
                             </span>
                           </div>
@@ -1375,19 +1438,19 @@ export default function MerchantPage() {
                         {current.id === "giftcards" && (
                           <>
                             <div className="mt-3 flex items-center justify-between">
-                              <span className="text-[11px] text-zinc-600">
+                              <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                                 Brand
                               </span>
-                              <span className="text-[11px] text-zinc-300">
+                              <span className="text-[10px] text-zinc-300 sm:text-[11px]">
                                 {giftBrand}
                               </span>
                             </div>
 
                             <div className="mt-3 flex items-center justify-between">
-                              <span className="text-[11px] text-zinc-600">
+                              <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                                 Plan
                               </span>
-                              <span className="text-[11px] text-zinc-300">
+                              <span className="text-[10px] text-zinc-300 sm:text-[11px]">
                                 {selectedGiftPlan.label}
                               </span>
                             </div>
@@ -1396,10 +1459,10 @@ export default function MerchantPage() {
 
                         {current.id === "mobile" && (
                           <div className="mt-3 flex items-center justify-between">
-                            <span className="text-[11px] text-zinc-600">
+                            <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                               Country
                             </span>
-                            <span className="text-[11px] text-zinc-300">
+                            <span className="text-[10px] text-zinc-300 sm:text-[11px]">
                               {countryConfig.name}
                             </span>
                           </div>
@@ -1487,7 +1550,7 @@ export default function MerchantPage() {
                     </h3>
 
                     <div className="mt-5 rounded-2xl border border-[#2d2d2d] bg-[#191919] p-4">
-                      <p className="text-[11px] text-zinc-600">
+                      <p className="text-[10px] text-zinc-600 sm:text-[11px]">
                         Service
                       </p>
 
@@ -1502,27 +1565,27 @@ export default function MerchantPage() {
 
                     <div className="mt-3 rounded-2xl border border-[#2d2d2d] bg-[#191919] p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-zinc-600">
+                        <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                           Service price
                         </span>
 
-                        <span className="text-[12px] font-semibold text-white">
+                        <span className="text-[11px] font-semibold text-white sm:text-[12px]">
                           {orderPrice}
                         </span>
                       </div>
 
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-[11px] text-zinc-600">
+                        <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                           Payment asset
                         </span>
 
-                        <span className="text-[12px] font-semibold text-white">
+                        <span className="text-[11px] font-semibold text-white sm:text-[12px]">
                           {paymentAsset}
                         </span>
                       </div>
 
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-[11px] text-zinc-600">
+                        <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                           Recipient
                         </span>
 
@@ -1585,27 +1648,27 @@ export default function MerchantPage() {
       )}
 
       {paymentSuccess && current && (
-        <div className="receipt-overlay fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="receipt-card w-full max-w-[560px] overflow-hidden rounded-[26px] border border-[#333] bg-[#171717] shadow-2xl">
-            <div className="border-b border-[#2b2b2b] px-6 py-6 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
+        <div className="receipt-overlay fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="receipt-card flex max-h-[90vh] w-[min(94vw,760px)] flex-col overflow-hidden rounded-[24px] border border-[#333] bg-[#171717] shadow-2xl">
+            <div className="shrink-0 border-b border-[#2b2b2b] px-5 py-4 text-center sm:px-6 sm:py-5">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-green-500/10 sm:h-12 sm:w-12">
                 <Check
-                  size={28}
+                  size={24}
                   className="text-green-500"
                   strokeWidth={2.5}
                 />
               </div>
 
-              <h2 className="mt-4 text-[22px] font-semibold">
+              <h2 className="mt-3 text-[20px] font-semibold sm:text-[21px]">
                 Payment confirmed
               </h2>
 
-              <p className="mt-1 text-[12px] text-zinc-500">
+              <p className="mt-1 text-[11px] text-zinc-500 sm:text-[12px]">
                 Your payment has been confirmed on Arc Testnet.
               </p>
             </div>
 
-            <div id="arivo-receipt" className="p-6">
+            <div id="arivo-receipt" className="min-h-0 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-600">
@@ -1624,26 +1687,26 @@ export default function MerchantPage() {
                 </span>
               </div>
 
-              <div className="mt-5 space-y-3 rounded-2xl border border-[#2d2d2d] bg-[#202020] p-5">
+              <div className="mt-4 space-y-2.5 rounded-2xl border border-[#2d2d2d] bg-[#202020] p-4 sm:p-5">
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">Service</span>
-                  <span className="text-[12px] font-medium text-white">
+                  <span className="text-[10px] text-zinc-600 sm:text-[11px]">Service</span>
+                  <span className="text-[11px] font-medium text-white sm:text-[12px]">
                     {current.title}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">
+                  <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                     Service amount
                   </span>
-                  <span className="text-[12px] font-medium text-white">
+                  <span className="text-[11px] font-medium text-white sm:text-[12px]">
                     {orderPrice}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">Paid</span>
-                  <span className="text-[12px] font-semibold text-white">
+                  <span className="text-[10px] text-zinc-600 sm:text-[11px]">Paid</span>
+                  <span className="text-[11px] font-semibold text-white sm:text-[12px]">
                     {paymentEquivalents
                       ? `${paymentEquivalents[paymentAsset].toLocaleString(
                           undefined,
@@ -1657,10 +1720,10 @@ export default function MerchantPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">
+                  <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                     Network fee
                   </span>
-                  <span className="text-[12px] text-zinc-300">
+                  <span className="text-[11px] text-zinc-300 sm:text-[12px]">
                     {networkFee} USDC
                   </span>
                 </div>
@@ -1668,21 +1731,21 @@ export default function MerchantPage() {
                 <div className="h-px bg-[#2d2d2d]" />
 
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">Wallet</span>
+                  <span className="text-[10px] text-zinc-600 sm:text-[11px]">Wallet</span>
                   <span className="max-w-[250px] truncate text-[11px] text-zinc-300">
                     {paymentReceiver || "Configured payment wallet"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">Date</span>
-                  <span className="text-[11px] text-zinc-300">
+                  <span className="text-[10px] text-zinc-600 sm:text-[11px]">Date</span>
+                  <span className="text-[10px] text-zinc-300 sm:text-[11px]">
                     {confirmedAt}
                   </span>
                 </div>
 
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">
+                  <span className="text-[10px] text-zinc-600 sm:text-[11px]">
                     Transaction
                   </span>
 
@@ -1696,7 +1759,7 @@ export default function MerchantPage() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-[#2d2d2d] bg-[#191919] p-4">
+              <div className="mt-3 rounded-2xl border border-[#2d2d2d] bg-[#191919] p-3.5 sm:p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-medium text-zinc-400">
@@ -1735,27 +1798,41 @@ export default function MerchantPage() {
                 )}
               </div>
 
-              <div className="mt-4 rounded-2xl border border-[#2d2d2d] bg-[#191919] p-4">
+              {current.id === "giftcards" && giftCardCode && (
+                <div className="mt-3 rounded-2xl border border-green-500/20 bg-green-500/5 p-3.5 sm:p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+                    Gift card code
+                  </p>
+                  <p className="mt-1.5 break-all font-mono text-[14px] font-bold tracking-[0.06em] text-white sm:text-[15px]">
+                    {giftCardCode}
+                  </p>
+                  <p className="mt-2 text-[10px] text-green-500">
+                    Gift card delivered successfully.
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-3 rounded-2xl border border-[#2d2d2d] bg-[#191919] p-3.5 sm:p-4">
                 <p className="text-[10px] font-medium text-zinc-400">
-                  Payment confirmed
+                  Service status
                 </p>
                 <p className="mt-1 text-[10px] leading-5 text-zinc-600">
                   {current.id === "giftcards"
-                    ? "Gift-card fulfillment is pending provider delivery."
+                    ? "Gift card delivered successfully to your email."
                     : current.id === "electricity"
-                      ? "Electricity-bill fulfillment is pending provider confirmation."
+                      ? "Electricity bill payment confirmed and recorded."
                       : current.id === "internet"
-                        ? "Internet-service fulfillment is pending provider confirmation."
-                        : "Recharge fulfillment is pending provider confirmation."}
+                        ? "Internet service payment confirmed and recorded."
+                        : "Mobile recharge payment confirmed and recorded."}
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-3 border-t border-[#2b2b2b] p-5">
+            <div className="shrink-0 flex gap-2.5 border-t border-[#2b2b2b] p-3.5 sm:gap-3 sm:p-4">
               <button
                 type="button"
                 onClick={printReceipt}
-                className="flex h-11 flex-1 items-center justify-center rounded-xl bg-[#efe5d2] text-[12px] font-semibold text-black transition hover:bg-white"
+                className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#efe5d2] px-3 text-[11px] font-semibold text-black transition hover:bg-white sm:h-11 sm:text-[12px]"
               >
                 Download PDF
               </button>
@@ -1763,7 +1840,7 @@ export default function MerchantPage() {
               <button
                 type="button"
                 onClick={openExplorer}
-                className="flex h-11 items-center justify-center rounded-xl border border-[#333] bg-[#202020] px-4 text-[12px] text-zinc-300 transition hover:bg-[#272727] hover:text-white"
+                className="flex h-10 items-center justify-center rounded-xl border border-[#333] bg-[#202020] px-3 text-[11px] text-zinc-300 transition hover:bg-[#272727] hover:text-white sm:h-11 sm:px-4 sm:text-[12px]"
               >
                 Explorer
               </button>
@@ -1771,7 +1848,7 @@ export default function MerchantPage() {
               <button
                 type="button"
                 onClick={closeSuccess}
-                className="flex h-11 items-center justify-center rounded-xl border border-[#333] bg-[#202020] px-4 text-[12px] text-zinc-300 transition hover:bg-[#272727] hover:text-white"
+                className="flex h-10 items-center justify-center rounded-xl border border-[#333] bg-[#202020] px-3 text-[11px] text-zinc-300 transition hover:bg-[#272727] hover:text-white sm:h-11 sm:px-4 sm:text-[12px]"
               >
                 Done
               </button>
@@ -1907,7 +1984,7 @@ export default function MerchantPage() {
                   Next step:{" "}
                 </strong>
                 {current.id === "giftcards"
-                  ? "Gift-card fulfillment is pending provider delivery."
+                  ? "Gift card fulfilled and delivered to your email."
                   : current.id === "electricity"
                     ? "Electricity-bill fulfillment is pending provider confirmation."
                     : current.id === "internet"

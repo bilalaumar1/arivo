@@ -1,24 +1,51 @@
-"use client";
+ "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import {
   getAddressTransactions,
   Transaction,
 } from "@/lib/explorer";
 
+const RECENT_LIMIT = 5;
+
+function formatAddress(address: string) {
+  if (!address) return "—";
+  return `${address.slice(0, 8)}...${address.slice(-6)}`;
+}
+
+function formatAmount(amount: number, sent: boolean, symbol: string) {
+  const value = amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  return `${sent ? "-" : "+"}${value} ${symbol}`;
+}
+
+function formatDate(timestamp: string | number | Date) {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleString();
+}
+
 export default function Transactions() {
   const { user } = usePrivy();
 
-  const [transactions, setTransactions] =
-    useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
+  const walletAddress = user?.wallet?.address ?? "";
 
   const loadTransactions = useCallback(
     async (showLoading = false) => {
-      if (!user?.wallet?.address) {
+      if (!walletAddress) {
+        setTransactions([]);
         setLoading(false);
         return;
       }
@@ -28,112 +55,122 @@ export default function Transactions() {
       }
 
       try {
-        const txs = await getAddressTransactions(
-          user.wallet.address
-        );
-
-        setTransactions(txs);
+        const txs = await getAddressTransactions(walletAddress);
+        setTransactions(Array.isArray(txs) ? txs : []);
       } catch (error) {
-        console.error(
-          "Failed to load transactions:",
-          error
-        );
+        console.error("Failed to load transactions:", error);
+
+        if (showLoading) {
+          setTransactions([]);
+        }
       } finally {
         if (showLoading) {
           setLoading(false);
         }
       }
     },
-    [user]
+    [walletAddress]
   );
 
   useEffect(() => {
-    loadTransactions(true);
+    void loadTransactions(true);
   }, [loadTransactions]);
 
   useEffect(() => {
     const refresh = () => {
-      loadTransactions(false);
+      void loadTransactions(false);
     };
 
-    window.addEventListener(
-      "refreshBalance",
-      refresh
-    );
+    window.addEventListener("refreshBalance", refresh);
 
     return () => {
-      window.removeEventListener(
-        "refreshBalance",
-        refresh
-      );
+      window.removeEventListener("refreshBalance", refresh);
     };
   }, [loadTransactions]);
 
   useEffect(() => {
-    if (!user?.wallet?.address) return;
+    if (!walletAddress) return;
 
-    const interval = setInterval(() => {
-      loadTransactions(false);
+    const interval = window.setInterval(() => {
+      void loadTransactions(false);
     }, 5000);
 
     return () => {
-      clearInterval(interval);
+      window.clearInterval(interval);
     };
-  }, [user, loadTransactions]);
+  }, [walletAddress, loadTransactions]);
+
+  const recentTransactions = useMemo(
+    () => transactions.slice(0, RECENT_LIMIT),
+    [transactions]
+  );
 
   return (
-    <div className="flex h-full flex-col rounded-[24px] border border-[#2b2b2b] bg-[#1a1a1a] p-5">
-
-      {/* Header */}
+    <section className="flex h-full min-h-0 flex-col rounded-[24px] border border-[#2b2b2b] bg-[#1a1a1a] p-5">
       <div className="mb-4 flex flex-shrink-0 items-center justify-between">
+        <div>
+          <h2 className="text-[17px] font-semibold text-white">
+            Recent Transactions
+          </h2>
+          <p className="mt-1 text-[11px] text-zinc-600">
+            Latest activity on Arc Testnet.
+          </p>
+        </div>
 
-        <h2 className="text-[17px] font-semibold text-white">
-          Recent Transactions
-        </h2>
-
-        <button
-          type="button"
+        <Link
+          href="/transactions"
           className="text-[13px] font-medium text-[#efe5d2] transition hover:text-white"
         >
           View all
-        </button>
-
+        </Link>
       </div>
 
-      {/* Transaction list */}
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[#3a3a3a] scrollbar-track-transparent">
-
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#3a3a3a]">
         {loading ? (
-          <div className="flex h-full items-center justify-center text-sm text-zinc-500">
-            Loading transactions...
+          <div className="space-y-3">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="flex h-[70px] animate-pulse items-center justify-between rounded-xl border border-white/5 bg-[#202020] px-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-[10px] bg-[#2a2a2a]" />
+                  <div>
+                    <div className="h-3 w-24 rounded bg-[#2a2a2a]" />
+                    <div className="mt-2 h-2.5 w-32 rounded bg-[#252525]" />
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="ml-auto h-3 w-20 rounded bg-[#2a2a2a]" />
+                  <div className="mt-2 ml-auto h-2.5 w-24 rounded bg-[#252525]" />
+                </div>
+              </div>
+            ))}
           </div>
-        ) : transactions.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm text-zinc-500">
-            No transactions found.
+        ) : recentTransactions.length === 0 ? (
+          <div className="flex h-full min-h-[180px] items-center justify-center text-center text-sm text-zinc-500">
+            <div>
+              <p>No transactions found.</p>
+              <p className="mt-1 text-[11px] text-zinc-700">
+                Your latest Arc activity will appear here.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-
-            {transactions.map((tx) => {
-
-              const address = tx.sent
-                ? tx.to
-                : tx.from;
+            {recentTransactions.map((tx, index) => {
+              const address = tx.sent ? tx.to : tx.from;
 
               return (
                 <div
-                  key={tx.hash}
-                  className="flex h-[70px] flex-shrink-0 items-center justify-between rounded-xl border border-white/5 bg-[#202020] px-4"
+                  key={`${tx.hash}-${index}`}
+                  className="flex min-h-[70px] flex-shrink-0 items-center justify-between rounded-xl border border-white/5 bg-[#202020] px-4"
                 >
-
-                  {/* LEFT */}
                   <div className="flex min-w-0 items-center gap-3">
-
                     <div
                       className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] ${
-                        tx.sent
-                          ? "bg-[#f3efe7]"
-                          : "bg-[#a8d75d]"
+                        tx.sent ? "bg-[#f3efe7]" : "bg-[#a8d75d]"
                       }`}
                     >
                       <span className="text-[13px] font-bold text-black">
@@ -142,65 +179,40 @@ export default function Transactions() {
                     </div>
 
                     <div className="min-w-0">
-
                       <h3 className="truncate text-[14px] font-medium text-white">
                         {tx.sent
                           ? `Sent ${tx.symbol}`
                           : `Received ${tx.symbol}`}
                       </h3>
-
-                      <p className="mt-0.5 text-[11px] text-zinc-500">
-                        {address.slice(0, 8)}...
-                        {address.slice(-6)}
+                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                        {formatAddress(address)}
                       </p>
-
                     </div>
-
                   </div>
 
-
-                  {/* RIGHT */}
-                  <div className="flex-shrink-0 text-right">
-
+                  <div className="ml-4 flex-shrink-0 text-right">
                     <p
                       className={`text-[14px] font-semibold ${
-                        tx.sent
-                          ? "text-white"
-                          : "text-[#22c55e]"
+                        tx.sent ? "text-white" : "text-[#22c55e]"
                       }`}
                     >
-                      {tx.sent ? "-" : "+"}
-                      {tx.amount.toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }
-                      )}{" "}
-                      {tx.symbol}
+                      {formatAmount(tx.amount, tx.sent, tx.symbol)}
                     </p>
 
                     <p className="mt-0.5 text-[11px] text-zinc-500">
-                      {new Date(
-                        tx.timestamp
-                      ).toLocaleString()}
+                      {formatDate(tx.timestamp)}
                     </p>
 
                     <p className="mt-0.5 text-[11px] text-[#22c55e]">
                       Confirmed
                     </p>
-
                   </div>
-
                 </div>
               );
             })}
-
           </div>
         )}
-
       </div>
-
-    </div>
+    </section>
   );
 }

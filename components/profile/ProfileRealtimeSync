@@ -1,0 +1,124 @@
+"use client";
+
+import { useEffect } from "react";
+import {
+  createClient,
+  type RealtimePostgresChangesPayload,
+} from "@supabase/supabase-js";
+
+type ProfileRow = {
+  id?: string;
+  user_id?: string;
+  wallet?: string;
+  wallet_address?: string;
+  display_name?: string;
+  username?: string;
+  avatar?: string;
+  avatar_url?: string;
+  profile_picture?: string;
+  arivo_id?: string;
+  [key: string]: unknown;
+};
+
+type ProfileRealtimeSyncProps = {
+  onProfileUpdate?: (
+    profile: ProfileRow,
+    payload: RealtimePostgresChangesPayload<ProfileRow>
+  ) => void;
+};
+
+declare const process: {
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL?: string;
+    NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
+  };
+};
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export default function ProfileRealtimeSync({
+  onProfileUpdate,
+}: ProfileRealtimeSyncProps) {
+  useEffect(() => {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error(
+        "Arivo: Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      );
+      return;
+    }
+
+    const supabase = createClient(
+      supabaseUrl,
+      supabaseAnonKey
+    );
+
+    const channel = supabase
+      .channel("arivo-profile-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+        },
+        (payload: RealtimePostgresChangesPayload<ProfileRow>) => {
+          const profile =
+            payload.eventType === "DELETE"
+              ? (payload.old as ProfileRow)
+              : (payload.new as ProfileRow);
+
+          const wallet =
+            profile.wallet ??
+            profile.wallet_address ??
+            "";
+
+          window.dispatchEvent(
+            new CustomEvent("arivo-profile-updated", {
+              detail: {
+                profile,
+                wallet,
+                eventType: payload.eventType,
+              },
+            })
+          );
+
+          if (
+            onProfileUpdate &&
+            payload.eventType !== "DELETE"
+          ) {
+            onProfileUpdate(profile, payload);
+          }
+
+          window.dispatchEvent(
+            new Event("arivo-refresh-profile")
+          );
+        }
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log(
+            "Arivo profile realtime: connected"
+          );
+        }
+
+        if (status === "CHANNEL_ERROR") {
+          console.error(
+            "Arivo profile realtime: channel error"
+          );
+        }
+
+        if (status === "TIMED_OUT") {
+          console.error(
+            "Arivo profile realtime: connection timed out"
+          );
+        }
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [onProfileUpdate]);
+
+  return null;
+}

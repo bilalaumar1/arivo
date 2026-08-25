@@ -168,29 +168,85 @@ function Sidebar() {
   ========================= */
 
   useEffect(() => {
+    let cancelled = false;
+
+    const walletAddress = user?.wallet?.address ?? "";
+
+    // Clear the previous user's profile immediately.
+    setProfileName("");
+    setProfileAvatar("");
+
+    if (!walletAddress) return;
+
     async function loadProfile() {
-      if (!user?.wallet?.address) return;
+      try {
+        const profile = await getProfile(walletAddress);
 
-      const profile = await getProfile(
-        user.wallet.address
-      );
+        // Ignore a request that belongs to an old wallet.
+        if (cancelled) return;
 
-      if (!profile) return;
+        if (!profile) {
+          setProfileName("");
+          setProfileAvatar("");
+          return;
+        }
 
-      if (profile.username) {
         setProfileName(
-          profile.username.replace("@", "")
+          profile.username
+            ? profile.username.replace("@", "")
+            : ""
         );
-      }
 
-      if (profile.avatar) {
-        setProfileAvatar(profile.avatar);
+        setProfileAvatar(profile.avatar || "");
+      } catch (error) {
+        if (cancelled) return;
+
+        console.error(
+          "Failed to load sidebar profile:",
+          error
+        );
+
+        setProfileName("");
+        setProfileAvatar("");
       }
     }
 
     loadProfile();
-  }, [user]);
 
+    // Refresh only for the currently connected wallet.
+    const refreshProfile = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        username?: string;
+        avatar?: string | null;
+        wallet?: string;
+      }>;
+
+      const updatedWallet = customEvent.detail?.wallet;
+
+      if (
+        updatedWallet &&
+        updatedWallet.toLowerCase() !== walletAddress.toLowerCase()
+      ) {
+        return;
+      }
+
+      loadProfile();
+    };
+
+    window.addEventListener(
+      "arivo-profile-updated",
+      refreshProfile
+    );
+
+    return () => {
+      cancelled = true;
+
+      window.removeEventListener(
+        "arivo-profile-updated",
+        refreshProfile
+      );
+    };
+  }, [user?.wallet?.address]);
   /* =========================
      Logout
   ========================= */
@@ -269,7 +325,8 @@ function Sidebar() {
 
           const isActive =
             item.href !== "#" &&
-            pathname === item.href;
+            (pathname === item.href ||
+              pathname.startsWith(`${item.href}/`));
 
           return (
             <Link

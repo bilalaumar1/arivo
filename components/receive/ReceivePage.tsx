@@ -7,6 +7,7 @@ import { getProfile } from "@/lib/profile";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
+
 import {
   getCurrentChainId,
   switchToArcNetwork,
@@ -97,10 +98,6 @@ function Sidebar() {
 
   const menuRef = useRef<HTMLDivElement>(null);
 
-  /* =========================
-     Close menu when clicking outside
-  ========================= */
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -111,22 +108,12 @@ function Sidebar() {
       }
     }
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  /* =========================
-     Check Arc network
-  ========================= */
 
   useEffect(() => {
     async function checkNetwork() {
@@ -147,10 +134,7 @@ function Sidebar() {
     checkNetwork();
 
     if (window.ethereum) {
-      window.ethereum.on(
-        "chainChanged",
-        checkNetwork
-      );
+      window.ethereum.on("chainChanged", checkNetwork);
     }
 
     return () => {
@@ -162,10 +146,6 @@ function Sidebar() {
       }
     };
   }, []);
-
-  /* =========================
-     Load profile
-  ========================= */
 
   useEffect(() => {
     async function loadProfile() {
@@ -191,10 +171,6 @@ function Sidebar() {
     loadProfile();
   }, [user]);
 
-  /* =========================
-     Logout
-  ========================= */
-
   const handleLogout = async () => {
     setOpenMenu(false);
 
@@ -202,10 +178,6 @@ function Sidebar() {
 
     router.replace("/");
   };
-
-  /* =========================
-     User information
-  ========================= */
 
   const name =
     profileName ||
@@ -225,13 +197,9 @@ function Sidebar() {
   return (
     <aside className="sticky top-0 z-50 flex h-screen w-[228px] shrink-0 flex-col border-r border-[#2b2b2b] bg-[#181818] pointer-events-auto">
 
-      {/* =========================
-          Logo
-      ========================= */}
-
+      {/* Logo */}
       <div className="px-5 pt-5">
         <div className="flex items-center gap-3">
-
           <Image
             src="/arivo-icon.png"
             alt="Arivo"
@@ -243,29 +211,13 @@ function Sidebar() {
           <h1 className="text-[21px] font-semibold text-white">
             Arivo
           </h1>
-
         </div>
       </div>
 
-      {/* =========================
-          Navigation
-      ========================= */}
-
+      {/* Navigation */}
       <nav className="mt-5 flex flex-col gap-1.5 px-4">
-
         {navigation.map((item) => {
           const Icon = item.icon;
-
-          /*
-            IMPORTANT:
-
-            pathname === item.href
-
-            Example:
-
-            /dashboard → Dashboard active
-            /send      → Send active
-          */
 
           const isActive =
             item.href !== "#" &&
@@ -281,9 +233,7 @@ function Sidebar() {
                   : "text-zinc-400 hover:bg-[#242424] hover:text-white"
               }`}
             >
-
               <div className="flex items-center gap-3">
-
                 <Icon
                   size={15}
                   strokeWidth={2}
@@ -292,10 +242,7 @@ function Sidebar() {
                 <span className="text-[12px] font-medium">
                   {item.name}
                 </span>
-
               </div>
-
-              {/* Arrow only for active page */}
 
               {isActive && (
                 <ChevronRight
@@ -303,25 +250,16 @@ function Sidebar() {
                   strokeWidth={2.3}
                 />
               )}
-
             </Link>
           );
         })}
-
       </nav>
 
-      {/* =========================
-          Arc Testnet
-      ========================= */}
-
+      {/* Arc Testnet */}
       <div className="mt-5 px-4">
-
         <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-3.5">
-
           <div className="flex items-center justify-between">
-
             <div>
-
               <p className="text-[13px] font-semibold text-white">
                 {isArcNetwork
                   ? "Arc Testnet"
@@ -341,7 +279,6 @@ function Sidebar() {
                   ? "Connected"
                   : "Please switch"}
               </p>
-
             </div>
 
             <Circle
@@ -349,13 +286,10 @@ function Sidebar() {
               fill="#22c55e"
               className="text-green-500"
             />
-
           </div>
 
           <div className="mt-4 space-y-2.5">
-
             <div className="flex items-center justify-between">
-
               <span className="text-[11px] text-zinc-500">
                 Status
               </span>
@@ -363,11 +297,9 @@ function Sidebar() {
               <span className="text-[11px] font-medium text-green-500">
                 Online
               </span>
-
             </div>
 
             <div className="flex items-center justify-between">
-
               <span className="text-[11px] text-zinc-500">
                 Block
               </span>
@@ -375,11 +307,9 @@ function Sidebar() {
               <span className="text-[11px] text-white">
                 521,991
               </span>
-
             </div>
 
             <div className="flex items-center justify-between">
-
               <span className="text-[11px] text-zinc-500">
                 RPC
               </span>
@@ -387,9 +317,7 @@ function Sidebar() {
               <span className="text-[11px] text-white">
                 118 ms
               </span>
-
             </div>
-
           </div>
 
           <button
@@ -400,35 +328,24 @@ function Sidebar() {
               ? "View Explorer"
               : "Switch Network"}
           </button>
-
         </div>
-
       </div>
 
-      {/* =========================
-          Push user card to bottom
-      ========================= */}
-
+      {/* Push user card to bottom */}
       <div className="flex-1" />
 
-      {/* =========================
-          User Card
-      ========================= */}
-
+      {/* User Card */}
       <div
         ref={menuRef}
         className="relative px-4 pb-4"
       >
-
         <button
           onClick={() =>
             setOpenMenu(!openMenu)
           }
           className="flex w-full items-center gap-3 rounded-2xl border border-[#2b2b2b] bg-[#202020] px-3 py-2.5 transition hover:border-[#3a3a3a] hover:bg-[#262626]"
         >
-
           {/* Avatar */}
-
           {profileAvatar ? (
             <Image
               src={profileAvatar}
@@ -440,20 +357,16 @@ function Sidebar() {
             />
           ) : (
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--arivo-primary)]">
-
               <span className="text-sm font-bold text-black">
                 {name
                   .charAt(0)
                   .toUpperCase()}
               </span>
-
             </div>
           )}
 
           {/* User Info */}
-
           <div className="min-w-0 flex-1 text-left">
-
             <h3 className="truncate text-[13px] font-semibold text-white">
               {name}
             </h3>
@@ -466,27 +379,19 @@ function Sidebar() {
                   )}...${subtitle.slice(-6)}`
                 : subtitle}
             </p>
-
           </div>
 
           <ChevronRight
             size={15}
             className={`shrink-0 text-zinc-500 transition-transform ${
-              openMenu
-                ? "rotate-90"
-                : ""
+              openMenu ? "rotate-90" : ""
             }`}
           />
-
         </button>
 
-        {/* =========================
-            Dropdown
-        ========================= */}
-
+        {/* Dropdown */}
         {openMenu && (
           <div className="absolute bottom-[72px] left-4 right-4 z-50 overflow-hidden rounded-2xl border border-[#2b2b2b] bg-[#1b1b1b] shadow-2xl">
-
             <button
               onClick={() => {
                 setOpenMenu(false);
@@ -521,30 +426,29 @@ function Sidebar() {
               <LogOut size={16} />
               <span>Sign out</span>
             </button>
-
           </div>
         )}
-
       </div>
-
     </aside>
   );
 }
 
 function ReceivePage() {
   const { user } = usePrivy();
-
   const [asset, setAsset] = useState<Asset>("USDC");
-  const [copied, setCopied] = useState<"wallet" | "arivo" | "">("");
+  const [copied, setCopied] =
+    useState<"wallet" | "arivo" | "">("");
 
   const walletAddress =
     user?.wallet?.address ||
     "0x0000000000000000000000000000000000000000";
 
-  // Arivo ID stable lié au wallet connecté.
-  // Quand يكون عندك profile/database, بدّل غير هاد السطر بالـ real Arivo ID.
   const arivoId = walletAddress
-    ? `ARV-${walletAddress.slice(2, 6).toUpperCase()}-${walletAddress.slice(-4).toUpperCase()}`
+    ? `ARV-${walletAddress
+        .slice(2, 6)
+        .toUpperCase()}-${walletAddress
+        .slice(-4)
+        .toUpperCase()}`
     : "ARV-XXXX-XXXX";
 
   const qrValue = `${asset}:${walletAddress}`;
@@ -581,410 +485,323 @@ function ReceivePage() {
       {/* MAIN */}
       <main className="relative z-0 min-w-0 flex-1">
 
-          {/* HEADER */}
+        {/* HEADER */}
+        <header className="flex h-[90px] items-center border-b border-[#292929] px-6 lg:px-9">
+          <button
+            type="button"
+            onClick={() => window.history.back()}
+            className="mr-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
+          >
+            <ArrowLeft size={19} />
+          </button>
 
-          <header className="flex h-[110px] items-center border-b border-[#292929] px-6 lg:px-9">
+          <div>
+            <h1 className="text-[27px] font-semibold">
+              Receive
+            </h1>
 
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="mr-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
-            >
-              <ArrowLeft size={19} />
-            </button>
+            <p className="mt-1 text-[13px] text-zinc-500">
+              Receive USDC or EURC on Arc Testnet.
+            </p>
+          </div>
+        </header>
 
-            <div>
+        {/* CONTENT */}
+        <div className="p-5 lg:p-7">
+          <div className="grid grid-cols-12 gap-5">
 
-              <h1 className="text-[27px] font-semibold">
-                Receive
-              </h1>
+            {/* LEFT */}
+            <section className="col-span-12 lg:col-span-8">
+              <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6 lg:p-7">
 
-              <p className="mt-1 text-[13px] text-zinc-500">
-                Receive USDC or EURC on Arc Testnet.
-              </p>
+                {/* TITLE */}
+                <div className="mb-6">
+                  <h2 className="text-[19px] font-semibold">
+                    Receive funds
+                  </h2>
 
-            </div>
+                  <p className="mt-1 text-[13px] text-zinc-500">
+                    Share your wallet address or QR code to receive funds.
+                  </p>
+                </div>
 
-          </header>
+                {/* ASSET */}
+                <div>
+                  <label className="mb-3 block text-[13px] text-zinc-400">
+                    Asset
+                  </label>
 
-          {/* CONTENT */}
-
-          <div className="p-6 lg:p-9">
-
-            <div className="grid grid-cols-12 gap-6">
-
-              {/* LEFT */}
-
-              <section className="col-span-12 lg:col-span-8">
-
-                <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6 lg:p-8">
-
-                  {/* TITLE */}
-
-                  <div className="mb-7">
-
-                    <h2 className="text-[19px] font-semibold">
-                      Receive funds
-                    </h2>
-
-                    <p className="mt-1 text-[13px] text-zinc-500">
-                      Share your wallet address or QR code to receive funds.
-                    </p>
-
-                  </div>
-
-                  {/* ASSET */}
-
-                  <div>
-
-                    <label className="mb-3 block text-[13px] text-zinc-400">
-                      Asset
-                    </label>
-
-                    <div className="grid grid-cols-2 gap-3">
-
-                      {(Object.keys(ASSETS) as Asset[]).map(
-                        (item) => (
-                          <button
-                            key={item}
-                            type="button"
-                            onClick={() => setAsset(item)}
-                            className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${
-                              asset === item
-                                ? "border-[#efe5d2] bg-[#efe5d2] text-black"
-                                : "border-[#353535] bg-[#202020] text-white hover:border-[#555]"
-                            }`}
-                          >
-
-                            <img
-                              src={ASSETS[item].logo}
-                              alt={item}
-                              className="h-10 w-10 rounded-full"
-                            />
-
-                            <div>
-
-                              <p className="font-semibold">
-                                {item}
-                              </p>
-
-                              <p
-                                className={`mt-1 text-[12px] ${
-                                  asset === item
-                                    ? "text-zinc-600"
-                                    : "text-zinc-500"
-                                }`}
-                              >
-                                {ASSETS[item].name}
-                              </p>
-
-                            </div>
-
-                          </button>
-                        )
-                      )}
-
-                    </div>
-
-                  </div>
-
-                  {/* QR + ADDRESS */}
-
-                  <div className="mt-8 grid gap-6 md:grid-cols-[230px_1fr]">
-
-                    {/* QR */}
-
-                    <div className="flex flex-col items-center justify-center rounded-[22px] border border-[#353535] bg-[#202020] p-5">
-
-                      <div className="rounded-2xl bg-white p-4">
-
-                        <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(
-                            qrValue
-                          )}`}
-                          alt="Wallet QR Code"
-                          className="h-[180px] w-[180px]"
-                        />
-
-                      </div>
-
-                      <p className="mt-4 text-center text-[12px] text-zinc-500">
-                        Scan to receive
-                      </p>
-
-                    </div>
-
-                    {/* DETAILS */}
-
-                    <div className="flex flex-col gap-5">
-
-                      {/* Wallet */}
-
-                      <div>
-
-                        <label className="mb-3 block text-[13px] text-zinc-400">
-                          Wallet Address
-                        </label>
-
-                        <div className="flex min-h-[62px] items-center gap-3 rounded-2xl border border-[#353535] bg-[#202020] px-5">
-
-                          <Wallet
-                            size={18}
-                            className="shrink-0 text-zinc-500"
+                  <div className="grid grid-cols-2 gap-3">
+                    {(Object.keys(ASSETS) as Asset[]).map(
+                      (item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() =>
+                            setAsset(item)
+                          }
+                          className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${
+                            asset === item
+                              ? "border-[#efe5d2] bg-[#efe5d2] text-black"
+                              : "border-[#353535] bg-[#202020] text-white hover:border-[#555]"
+                          }`}
+                        >
+                          <img
+                            src={ASSETS[item].logo}
+                            alt={item}
+                            className="h-10 w-10 rounded-full"
                           />
 
-                          <p className="min-w-0 flex-1 truncate text-[13px] text-white">
-                            {walletAddress}
-                          </p>
+                          <div>
+                            <p className="font-semibold">
+                              {item}
+                            </p>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              copyText(
-                                walletAddress,
-                                "wallet"
-                              )
-                            }
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#353535] bg-[#292929] text-zinc-300 transition hover:bg-[#333]"
-                          >
-                            {copied === "wallet" ? (
-                              <Check
-                                size={16}
-                                className="text-green-500"
-                              />
-                            ) : (
-                              <Copy size={16} />
-                            )}
-                          </button>
+                            <p
+                              className={`mt-1 text-[12px] ${
+                                asset === item
+                                  ? "text-zinc-600"
+                                  : "text-zinc-500"
+                              }`}
+                            >
+                              {ASSETS[item].name}
+                            </p>
+                          </div>
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
 
-                        </div>
+                {/* QR + ADDRESS */}
+                <div className="mt-7 grid gap-5 md:grid-cols-[220px_1fr]">
 
-                      </div>
-
-                      {/* Arivo ID */}
-
-                      <div>
-
-                        <label className="mb-3 block text-[13px] text-zinc-400">
-                          Arivo ID
-                        </label>
-
-                        <div className="flex min-h-[62px] items-center gap-3 rounded-2xl border border-[#353535] bg-[#202020] px-5">
-
-                          <p className="flex-1 text-[14px] font-medium text-white">
-                            {arivoId}
-                          </p>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              copyText(
-                                arivoId,
-                                "arivo"
-                              )
-                            }
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#353535] bg-[#292929] text-zinc-300 transition hover:bg-[#333]"
-                          >
-                            {copied === "arivo" ? (
-                              <Check
-                                size={16}
-                                className="text-green-500"
-                              />
-                            ) : (
-                              <Copy size={16} />
-                            )}
-                          </button>
-
-                        </div>
-
-                      </div>
-
+                  {/* QR */}
+                  <div className="flex flex-col items-center justify-center rounded-[22px] border border-[#353535] bg-[#202020] p-5">
+                    <div className="rounded-2xl bg-white p-4">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(
+                          qrValue
+                        )}`}
+                        alt="Wallet QR Code"
+                        className="h-[180px] w-[180px]"
+                      />
                     </div>
 
+                    <p className="mt-4 text-center text-[12px] text-zinc-500">
+                      Scan to receive
+                    </p>
                   </div>
 
-                  {/* NETWORK */}
+                  {/* DETAILS */}
+                  <div className="flex flex-col gap-5">
 
-                  <div className="mt-7 flex items-center justify-between rounded-2xl border border-[#353535] bg-[#202020] px-5 py-4">
-
+                    {/* Wallet */}
                     <div>
+                      <label className="mb-3 block text-[13px] text-zinc-400">
+                        Wallet Address
+                      </label>
 
-                      <p className="text-[12px] text-zinc-500">
-                        Network
-                      </p>
+                      <div className="flex min-h-[62px] items-center gap-3 rounded-2xl border border-[#353535] bg-[#202020] px-5">
+                        <Wallet
+                          size={18}
+                          className="shrink-0 text-zinc-500"
+                        />
 
-                      <p className="mt-1 text-[14px] font-semibold text-white">
-                        Arc Testnet
-                      </p>
+                        <p className="min-w-0 flex-1 truncate text-[13px] text-white">
+                          {walletAddress}
+                        </p>
 
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyText(
+                              walletAddress,
+                              "wallet"
+                            )
+                          }
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#353535] bg-[#292929] text-zinc-300 transition hover:bg-[#333]"
+                        >
+                          {copied === "wallet" ? (
+                            <Check
+                              size={16}
+                              className="text-green-500"
+                            />
+                          ) : (
+                            <Copy size={16} />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
-                    <span className="rounded-lg bg-[#2b2b2b] px-3 py-2 text-[11px] text-zinc-400">
-                      Testnet
+                    {/* Arivo ID */}
+                    <div>
+                      <label className="mb-3 block text-[13px] text-zinc-400">
+                        Arivo ID
+                      </label>
+
+                      <div className="flex min-h-[62px] items-center gap-3 rounded-2xl border border-[#353535] bg-[#202020] px-5">
+                        <p className="flex-1 text-[14px] font-medium text-white">
+                          {arivoId}
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyText(
+                              arivoId,
+                              "arivo"
+                            )
+                          }
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#353535] bg-[#292929] text-zinc-300 transition hover:bg-[#333]"
+                        >
+                          {copied === "arivo" ? (
+                            <Check
+                              size={16}
+                              className="text-green-500"
+                            />
+                          ) : (
+                            <Copy size={16} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* NETWORK */}
+                <div className="mt-6 flex items-center justify-between rounded-2xl border border-[#353535] bg-[#202020] px-5 py-4">
+                  <div>
+                    <p className="text-[12px] text-zinc-500">
+                      Network
+                    </p>
+
+                    <p className="mt-1 text-[14px] font-semibold text-white">
+                      Arc Testnet
+                    </p>
+                  </div>
+
+                  <span className="rounded-lg bg-[#2b2b2b] px-3 py-2 text-[11px] text-zinc-400">
+                    Testnet
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            {/* RIGHT */}
+            <aside className="col-span-12 space-y-5 lg:col-span-4">
+
+              {/* RECEIVE SUMMARY */}
+              <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-[17px] font-semibold text-white">
+                      Receive summary
+                    </h2>
+
+                    <p className="mt-1 text-[12px] text-zinc-600">
+                      Your receiving details
+                    </p>
+                  </div>
+
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#303030] bg-[#202020]">
+                    <ArrowDownLeft
+                      size={18}
+                      className="text-zinc-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] text-zinc-500">
+                      Asset
                     </span>
 
+                    <span className="text-[13px] font-semibold text-white">
+                      {asset}
+                    </span>
                   </div>
 
-                </div>
+                  <div className="flex items-center justify-between gap-5">
+                    <span className="text-[13px] text-zinc-500">
+                      Network
+                    </span>
 
-              </section>
-
-              {/* RIGHT */}
-
-              <aside className="col-span-12 space-y-5 lg:col-span-4">
-
-                {/* RECEIVE SUMMARY */}
-
-                <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6">
-
-                  <div className="flex items-center justify-between">
-
-                    <div>
-
-                      <h2 className="text-[17px] font-semibold text-white">
-                        Receive summary
-                      </h2>
-
-                      <p className="mt-1 text-[12px] text-zinc-600">
-                        Your receiving details
-                      </p>
-
-                    </div>
-
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#303030] bg-[#202020]">
-
-                      <ArrowDownLeft
-                        size={18}
-                        className="text-zinc-400"
-                      />
-
-                    </div>
-
-                  </div>
-
-                  <div className="mt-6 space-y-5">
-
-                    <div className="flex items-center justify-between">
-
-                      <span className="text-[13px] text-zinc-500">
-                        Asset
-                      </span>
-
-                      <span className="text-[13px] font-semibold text-white">
-                        {asset}
-                      </span>
-
-                    </div>
-
-                    <div className="flex items-center justify-between gap-5">
-
-                      <span className="text-[13px] text-zinc-500">
-                        Network
-                      </span>
-
-                      <span className="text-[13px] font-semibold text-white">
-                        Arc Testnet
-                      </span>
-
-                    </div>
-
-                    <div className="flex items-center justify-between gap-5">
-
-                      <span className="text-[13px] text-zinc-500">
-                        Address
-                      </span>
-
-                      <span className="max-w-[180px] truncate text-right text-[12px] text-zinc-300">
-                        {shortenAddress(walletAddress)}
-                      </span>
-
-                    </div>
-
-                    <div className="h-px bg-[#2a2a2a]" />
-
-                    <div className="rounded-2xl border border-[#303030] bg-[#202020] px-4 py-4">
-
-                      <div className="flex items-center gap-3">
-
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#efe5d2] text-black">
-
-                          <ArrowDownLeft size={18} />
-
-                        </div>
-
-                        <div>
-
-                          <p className="text-[13px] font-semibold text-white">
-                            Ready to receive
-                          </p>
-
-                          <p className="mt-1 text-[11px] text-zinc-500">
-                            Share your address with the sender.
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {/* SECURE RECEIVE */}
-
-                <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6">
-
-                  <div className="flex items-start gap-3">
-
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#303030] bg-[#242424]">
-
-                      <Check
-                        size={18}
-                        className="text-[#efe5d2]"
-                      />
-
-                    </div>
-
-                    <div>
-
-                      <h3 className="text-[14px] font-semibold text-white">
-                        Secure receive
-                      </h3>
-
-                      <p className="mt-1 text-[12px] leading-5 text-zinc-500">
-                        Only send {asset} on Arc Testnet to this wallet address.
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#2d2d2d] bg-[#202020] px-4 py-3">
-
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
-
-                    <span className="text-[12px] font-medium text-zinc-300">
+                    <span className="text-[13px] font-semibold text-white">
                       Arc Testnet
                     </span>
-
-                    <span className="ml-auto text-[11px] font-medium text-green-500">
-                      Connected
-                    </span>
-
                   </div>
 
+                  <div className="flex items-center justify-between gap-5">
+                    <span className="text-[13px] text-zinc-500">
+                      Address
+                    </span>
+
+                    <span className="max-w-[180px] truncate text-right text-[12px] text-zinc-300">
+                      {shortenAddress(walletAddress)}
+                    </span>
+                  </div>
+
+                  <div className="h-px bg-[#2a2a2a]" />
+
+                  <div className="rounded-2xl border border-[#303030] bg-[#202020] px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#efe5d2] text-black">
+                        <ArrowDownLeft size={18} />
+                      </div>
+
+                      <div>
+                        <p className="text-[13px] font-semibold text-white">
+                          Ready to receive
+                        </p>
+
+                        <p className="mt-1 text-[11px] text-zinc-500">
+                          Share your address with the sender.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECURE RECEIVE */}
+              <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#303030] bg-[#242424]">
+                    <Check
+                      size={18}
+                      className="text-[#efe5d2]"
+                    />
+                  </div>
+
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-white">
+                      Secure receive
+                    </h3>
+
+                    <p className="mt-1 text-[12px] leading-5 text-zinc-500">
+                      Only send {asset} on Arc Testnet to this wallet address.
+                    </p>
+                  </div>
                 </div>
 
-              </aside>
+                <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#2d2d2d] bg-[#202020] px-4 py-3">
+                  <span className="h-2 w-2 rounded-full bg-green-500" />
 
-            </div>
+                  <span className="text-[12px] font-medium text-zinc-300">
+                    Arc Testnet
+                  </span>
 
+                  <span className="ml-auto text-[11px] font-medium text-green-500">
+                    Connected
+                  </span>
+                </div>
+              </div>
+            </aside>
           </div>
-
-        </main>
-
+        </div>
+      </main>
     </div>
   );
 }

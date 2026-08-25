@@ -11,15 +11,12 @@ import FaucetCard from "../cards/FaucetCard";
 export default function DashboardLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-[#111111]">
-
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-7">
-
           <div className="grid grid-cols-12 gap-5">
 
             {/* ================= LEFT ================= */}
@@ -43,7 +40,6 @@ export default function DashboardLayout() {
 
             </div>
 
-
             {/* ================= RIGHT ================= */}
 
             <div className="col-span-4 flex flex-col gap-5">
@@ -66,11 +62,8 @@ export default function DashboardLayout() {
             </div>
 
           </div>
-
         </main>
-
       </div>
-
     </div>
   );
 }

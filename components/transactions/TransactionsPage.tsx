@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import Sidebar from "@/components/layout/Sidebar";
 import {
   getAddressTransactions,
   Transaction as ExplorerTransaction,
 } from "@/lib/explorer";
 
+import Sidebar from "@/components/layout/Sidebar";
+
 import {
+  ArrowLeft,
   ArrowDownLeft,
   ArrowUpRight,
   Check,
@@ -17,6 +19,7 @@ import {
   Copy,
   ExternalLink,
   Filter,
+  ReceiptText,
   Wallet,
   X,
   Clock3,
@@ -52,11 +55,6 @@ const tabs: { label: string; value: Tab }[] = [
   },
 ];
 
-function navClass(active = false) {
-  return active
-    ? "mb-2 flex h-[48px] items-center justify-between rounded-2xl bg-[#efe5d2] px-4 text-[14px] font-medium text-black"
-    : "mb-2 flex h-[48px] items-center gap-4 rounded-2xl px-4 text-[14px] text-zinc-400 transition hover:bg-[#202020] hover:text-white";
-}
 
 function statusIcon(status: TransactionStatus) {
   if (status === "confirmed") {
@@ -291,20 +289,31 @@ export default function TransactionsPage() {
   return (
     <div className="flex min-h-screen bg-[#111111] text-white">
       <Sidebar />
-      {/* MAIN */}
 
       <main className="min-w-0 flex-1">
+
         {/* HEADER */}
 
         <header className="flex min-h-[88px] items-center justify-between border-b border-[#292929] px-6 sm:px-8">
-          <div>
-            <h1 className="text-[26px] font-semibold">
-              Transactions
-            </h1>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
+              aria-label="Go back"
+            >
+              <ArrowLeft size={19} />
+            </button>
 
-            <p className="mt-1 text-[13px] text-zinc-500">
-              View and manage your transaction history.
-            </p>
+            <div>
+              <h1 className="text-[26px] font-semibold">
+                Transactions
+              </h1>
+
+              <p className="mt-1 text-[13px] text-zinc-500">
+                View and manage your transaction history on Arc Testnet.
+              </p>
+            </div>
           </div>
 
           <button
@@ -318,7 +327,7 @@ export default function TransactionsPage() {
 
         {/* CONTENT */}
 
-        <main className="p-5 sm:p-8">
+        <main className="p-6 sm:p-8">
           <div className="mx-auto max-w-[1200px]">
             {/* SUMMARY */}
 
@@ -580,7 +589,6 @@ export default function TransactionsPage() {
             </div>
           </div>
         </main>
-
       </main>
 
       {/* DETAILS MODAL */}

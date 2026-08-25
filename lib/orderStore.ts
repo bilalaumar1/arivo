@@ -23,6 +23,7 @@ export type ArivoOrder = {
   createdAt: string;
   updatedAt: string;
   fulfillmentNote: string;
+  giftCardCode?: string;
 };
 
 const STORAGE_KEY = "arivo:orders:v1";
@@ -60,7 +61,7 @@ export function saveArivoOrder(order: ArivoOrder) {
     const orders = getArivoOrders();
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify([order, ...orders].slice(0, 100))
+      JSON.stringify([order, ...orders.filter((item) => item.id !== order.id)].slice(0, 100))
     );
 
     window.dispatchEvent(new Event("arivo:orders-updated"));
