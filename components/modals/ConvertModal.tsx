@@ -13,6 +13,7 @@ import {
   type Address,
 } from "viem";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useToast } from "@/components/toast/ToastProvider";
 
 const ARC_TESTNET_CHAIN_ID = 5042002;
 
@@ -106,6 +107,7 @@ export default function ConvertModal({
 }: ConvertModalProps) {
   const { user } = usePrivy();
   const { wallets } = useWallets();
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const [fromCurrency, setFromCurrency] =
     useState<Currency>("USDC");
@@ -504,6 +506,11 @@ export default function ConvertModal({
 
       setTxHash(hash);
 
+      toastSuccess(
+        "Conversion successful",
+        `${amount} ${fromCurrency} converted to ${receiveAmount} ${toCurrency}.`
+      );
+
       window.dispatchEvent(
         new Event(
           "refreshBalance"
@@ -523,11 +530,13 @@ export default function ConvertModal({
         err
       );
 
-      setError(
+      const errorMessage =
         err instanceof Error
           ? err.message
-          : "Conversion failed."
-      );
+          : "Conversion failed.";
+
+      setError(errorMessage);
+      toastError("Conversion failed", errorMessage);
     } finally {
       setLoading(false);
     }

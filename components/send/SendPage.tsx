@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { getWalletBalance } from "@/lib/wallet";
 import { sendUSDC } from "@/lib/sendUSDC";
 import { sendEURC } from "@/lib/sendEURC";
 import { getProfileByArivoId } from "@/lib/profile";
 import { useToast } from "../toast/ToastProvider";
 import { publicClient } from "@/lib/publicClient";
+import { createNotification } from "@/lib/notifications";
 
 import {
   formatUnits,
@@ -119,22 +119,54 @@ export default function SendPage() {
     }
 
     try {
-      const usdc = await getWalletBalance(address);
+      /*
+       * Arc has one underlying USDC balance.
+       * Read the native balance instead of calling
+       * USDC.balanceOf() on the public RPC.
+       *
+       * Native USDC uses 18 decimals on Arc.
+       * The UI/send amount uses the ERC-20 6-decimal representation.
+       */
+      const nativeUsdc = await publicClient.getBalance({
+        address,
+      });
 
-      setUsdcBalance(Number(usdc || 0).toFixed(2));
-      setEurcBalance("0.00");
+      setUsdcBalance(
+        Number(formatUnits(nativeUsdc, 18)).toFixed(2)
+      );
+
+      /*
+       * Only query EURC when it is actually selected.
+       * This avoids an unnecessary eth_call on every page load.
+       */
+      if (asset.symbol === "EURC") {
+        const eurcRaw = await publicClient.readContract({
+          address: TOKEN_ADDRESSES.EURC,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [address],
+        });
+
+        setEurcBalance(
+          Number(formatUnits(eurcRaw, 6)).toFixed(2)
+        );
+      }
     } catch (error) {
       console.error("Failed to load wallet balance:", error);
 
-      setUsdcBalance("0.00");
-      setEurcBalance("0.00");
+      /*
+       * Keep the last known balance if the public RPC
+       * is temporarily rate-limited.
+       */
     }
-  }, [user?.wallet?.address]);
+  }, [user?.wallet?.address, asset.symbol]);
 
   useEffect(() => {
     loadBalances();
 
-    const refresh = () => loadBalances();
+    const refresh = () => {
+      void loadBalances();
+    };
 
     window.addEventListener("refreshBalance", refresh);
 
@@ -395,6 +427,30 @@ export default function SendPage() {
         `${Number(amount).toFixed(2)} ${asset.symbol} was sent to the recipient.`
       );
 
+      // Create a notification for the sender.
+      // This does not affect the transaction if notification creation fails.
+      try {
+        const senderAddress = user?.wallet?.address;
+
+        if (senderAddress) {
+          await createNotification({
+            recipientAddress: senderAddress,
+            type: "send",
+            title: `${asset.symbol} sent`,
+            message: `${Number(amount).toFixed(2)} ${asset.symbol} sent to ${walletAddress}`,
+            transactionHash: hash,
+            asset: asset.symbol,
+            amount: Number(amount),
+            senderAddress,
+          });
+        }
+      } catch (notificationError) {
+        console.error(
+          "Failed to create send notification:",
+          notificationError
+        );
+      }
+
       // Get the real transaction fee.
       try {
         const receipt =
@@ -452,6 +508,30 @@ export default function SendPage() {
         `${asset.symbol} transaction failed`,
         "Please try again."
       );
+
+      // Create a notification for the failed transaction.
+      // No transaction hash is used because the transaction may have failed
+      // before a hash was returned.
+      try {
+        const senderAddress = user?.wallet?.address;
+
+        if (senderAddress) {
+          await createNotification({
+            recipientAddress: senderAddress,
+            type: "failed",
+            title: `${asset.symbol} transaction failed`,
+            message: `Your ${asset.symbol} transaction could not be completed.`,
+            asset: asset.symbol,
+            amount: Number(amount),
+            senderAddress,
+          });
+        }
+      } catch (notificationError) {
+        console.error(
+          "Failed to create failed-transaction notification:",
+          notificationError
+        );
+      }
     } finally {
       setLoading(false);
     }

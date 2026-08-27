@@ -16,6 +16,7 @@ import { getProfileByArivoId } from "@/lib/profile";
 import { getWalletBalance } from "@/lib/wallet";
 import { publicClient } from "@/lib/publicClient";
 import { formatUnits } from "viem";
+import { useToast } from "@/components/toast/ToastProvider";
 
 type SendMethod = "arivo" | "wallet";
 type Asset = "USDC" | "EURC";
@@ -54,6 +55,8 @@ export default function SendModal({
   initialMethod = "arivo",
 }: SendModalProps) {
   const { user } = usePrivy();
+
+  const { success, error: toastError } = useToast();
 
   const [sendMethod, setSendMethod] =
     useState<SendMethod>(initialMethod);
@@ -275,9 +278,16 @@ export default function SendModal({
 
       if (sendMethod === "arivo") {
         if (!recipientProfile) {
-          setError(
-            "Recipient profile not found."
+          const message =
+            "Recipient profile not found.";
+
+          setError(message);
+
+          toastError(
+            "Recipient not found",
+            message
           );
+
           return;
         }
 
@@ -289,13 +299,24 @@ export default function SendModal({
         !walletAddress.startsWith("0x") ||
         walletAddress.length !== 42
       ) {
-        setError(
-          "Invalid wallet address."
+        const message =
+          "Invalid wallet address.";
+
+        setError(message);
+
+        toastError(
+          "Invalid wallet address",
+          message
         );
+
         return;
       }
 
       let hash: string;
+
+      // -----------------------------------------
+      // SEND TRANSACTION
+      // -----------------------------------------
 
       if (selectedAsset === "USDC") {
         hash = await sendUSDC(
@@ -314,6 +335,41 @@ export default function SendModal({
         hash
       );
 
+      // -----------------------------------------
+      // WAIT FOR ON-CHAIN CONFIRMATION
+      // -----------------------------------------
+
+      const receipt =
+        await publicClient.waitForTransactionReceipt({
+          hash: hash as `0x${string}`,
+        });
+
+      console.log(
+        `${selectedAsset} Transaction Receipt:`,
+        receipt
+      );
+
+      if (receipt.status !== "success") {
+        throw new Error(
+          `${selectedAsset} transaction reverted`
+        );
+      }
+
+      // -----------------------------------------
+      // SUCCESS TOAST
+      // -----------------------------------------
+
+      success(
+        `${selectedAsset} sent successfully`,
+        `${Number(amount).toFixed(
+          2
+        )} ${selectedAsset} was sent to the recipient.`
+      );
+
+      // -----------------------------------------
+      // RESET MODAL
+      // -----------------------------------------
+
       setRecipient("");
       setAmount("");
       setError("");
@@ -321,7 +377,15 @@ export default function SendModal({
       setShowConfirmation(false);
       setAssetMenuOpen(false);
 
+      // -----------------------------------------
+      // CLOSE MODAL
+      // -----------------------------------------
+
       onClose();
+
+      // -----------------------------------------
+      // REFRESH BALANCE + TRANSACTIONS
+      // -----------------------------------------
 
       window.dispatchEvent(
         new Event("refreshBalance")
@@ -332,8 +396,14 @@ export default function SendModal({
         error
       );
 
-      setError(
-        `${selectedAsset} transaction failed. Please try again.`
+      const message =
+        `${selectedAsset} transaction failed. Please try again.`;
+
+      setError(message);
+
+      toastError(
+        `${selectedAsset} transaction failed`,
+        "Please try again."
       );
     } finally {
       setLoading(false);
@@ -756,13 +826,17 @@ export default function SendModal({
                     <button
                       type="button"
                       onClick={() => {
-                        setAmount(availableBalance);
+                        setAmount(
+                          availableBalance
+                        );
                         setError("");
                       }}
                       disabled={
                         loading ||
                         lookingUp ||
-                        Number(availableBalance) <= 0
+                        Number(
+                          availableBalance
+                        ) <= 0
                       }
                       className="rounded-md px-2 py-1 text-[12px] font-semibold text-[#f3ead7] transition hover:bg-[#303030] disabled:cursor-not-allowed disabled:opacity-40"
                     >
@@ -844,13 +918,10 @@ export default function SendModal({
             </div>
           </>
         ) : (
-
           /* =====================================
              CONFIRMATION
           ===================================== */
-
           <>
-
             {/* HEADER */}
 
             <div className="flex items-center justify-between border-b border-[#292929] px-7 py-5">
@@ -931,6 +1002,7 @@ export default function SendModal({
                   <div className="mt-3 flex items-center gap-3">
 
                     {recipientProfile.avatar ? (
+
                       <img
                         src={
                           recipientProfile.avatar
@@ -940,22 +1012,29 @@ export default function SendModal({
                         }
                         className="h-10 w-10 rounded-full border border-[#333] object-cover"
                       />
+
                     ) : (
+
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#303030] font-semibold text-white">
+
                         {recipientProfile.username
                           .replace("@", "")
                           .charAt(0)
                           .toUpperCase()}
+
                       </div>
+
                     )}
 
                     <div>
 
                       <p className="text-sm font-medium text-white">
+
                         {recipientProfile.username.replace(
                           "@",
                           ""
                         )}
+
                       </p>
 
                       <p className="mt-0.5 text-xs text-zinc-500">
@@ -989,6 +1068,7 @@ export default function SendModal({
 
               {sendMethod === "arivo" &&
               recipientProfile && (
+
                 <div className="mt-3 rounded-xl border border-[#303030] bg-[#202020] p-4">
 
                   <p className="text-[12px] text-zinc-500">
@@ -1000,6 +1080,7 @@ export default function SendModal({
                   </p>
 
                 </div>
+
               )}
 
               {/* NETWORK */}
@@ -1045,9 +1126,11 @@ export default function SendModal({
                   disabled={loading}
                   className="h-[52px] flex-1 rounded-xl bg-[#f3ead7] text-sm font-semibold text-black transition hover:bg-[#eadfc9] disabled:cursor-not-allowed disabled:opacity-50"
                 >
+
                   {loading
                     ? "Sending..."
                     : "Confirm & Send"}
+
                 </button>
 
               </div>
@@ -1057,6 +1140,7 @@ export default function SendModal({
         )}
 
       </div>
+
     </div>
   );
 }

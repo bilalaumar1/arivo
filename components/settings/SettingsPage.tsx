@@ -58,8 +58,7 @@ function SettingsRow({
   active?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <div
       onClick={onClick}
       className={`w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition ${
         active
@@ -88,7 +87,7 @@ function SettingsRow({
           {right}
         </div>
       )}
-    </button>
+    </div>
   );
 }
 

@@ -5,6 +5,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useToast } from "@/components/toast/ToastProvider";
 import { getProfile } from "@/lib/profile";
 import { publicClient } from "@/lib/publicClient";
+import { createNotification } from "@/lib/notifications";
 import {
   formatUnits,
   type Address,
@@ -212,6 +213,10 @@ export default function IncomingPaymentWatcher() {
 
     /*
      * Freeze recipient address.
+     *
+     * IMPORTANT:
+     * recipientAddress is explicitly typed as Address
+     * after the undefined check above.
      */
     const recipientAddress: Address =
       walletAddress;
@@ -599,24 +604,69 @@ export default function IncomingPaymentWatcher() {
           }
 
           /*
-           * FINAL TOAST
-           *
-           * Example:
-           *
-           * Title:
-           * USDC received
-           *
-           * Message:
-           * 1 USDC received from @Bilal
+           * Notification content.
            */
-          successRef.current(
-            `${payment.asset} received`,
+          const notificationTitle =
+            `${payment.asset} received`;
+
+          const notificationMessage =
             `${amount.toLocaleString(
               undefined,
               {
                 maximumFractionDigits: 6,
               }
-            )} ${payment.asset} received from @${senderName}`
+            )} ${payment.asset} received from @${senderName}`;
+
+          /*
+           * Persist the notification in Supabase.
+           *
+           * IMPORTANT:
+           * This call MUST match the actual
+           * createNotification() API.
+           *
+           * recipientAddress -> recipient_address
+           * transactionHash  -> transaction_hash
+           * asset            -> asset
+           * amount           -> amount
+           * senderAddress    -> sender_address
+           */
+          try {
+            await createNotification({
+              recipientAddress,
+              type: "payment",
+              title: notificationTitle,
+              message: notificationMessage,
+              transactionHash:
+                payment.transactionHash,
+              asset: payment.asset,
+              amount,
+              senderAddress:
+                payment.from,
+            });
+          } catch (notificationError) {
+            /*
+             * Notification failure must NEVER
+             * stop the blockchain watcher or toast.
+             */
+            console.error(
+              "Failed to create incoming payment notification:",
+              notificationError
+            );
+          }
+
+          /*
+           * FINAL TOAST
+           */
+          successRef.current(
+            notificationTitle,
+            notificationMessage
+          );
+
+          /*
+           * Tell the notification UI to refresh.
+           */
+          window.dispatchEvent(
+            new Event("refreshNotifications")
           );
 
           /*
