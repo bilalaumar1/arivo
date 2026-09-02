@@ -3,50 +3,51 @@ import {
   custom,
   parseUnits,
   erc20Abi,
+  type EIP1193Provider,
 } from "viem";
 
-import { publicClient } from "./publicClient";
+import { arcTestnet } from "viem/chains";
 
 const EURC_ADDRESS =
   "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as const;
 
 export async function sendEURC(
   recipient: `0x${string}`,
-  amount: string
+  amount: string,
+  provider?: EIP1193Provider
 ) {
-  if (!window.ethereum) {
+  const transactionProvider =
+    provider ??
+    (typeof window !== "undefined"
+      ? window.ethereum
+      : undefined);
+
+  if (!transactionProvider) {
     throw new Error("Wallet provider not found");
   }
 
   const walletClient = createWalletClient({
-    transport: custom(window.ethereum),
+    chain: arcTestnet,
+    transport: custom(transactionProvider),
   });
 
-  const [account] =
-    await walletClient.getAddresses();
+  const [account] = await walletClient.getAddresses();
 
   if (!account) {
     throw new Error("Wallet account not found");
   }
 
-  const hash =
-    await walletClient.writeContract({
-      account,
-      chain: publicClient.chain,
-      address: EURC_ADDRESS,
-      abi: erc20BalanceAbi,
-      functionName: "transfer",
-      args: [
-        recipient,
-        parseUnits(amount, 6),
-      ],
-    });
-
-  await publicClient.waitForTransactionReceipt({
-    hash,
+  const hash = await walletClient.writeContract({
+    account,
+    chain: arcTestnet,
+    address: EURC_ADDRESS,
+    abi: erc20Abi,
+    functionName: "transfer",
+    args: [
+      recipient,
+      parseUnits(amount, 6),
+    ],
   });
 
   return hash;
 }
-
-const erc20BalanceAbi = erc20Abi;

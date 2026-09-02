@@ -6,19 +6,30 @@ declare global {
   }
 }
 
-export async function switchToArcNetwork() {
+type PrivyWallet = {
+  switchChain?: (chainId: number) => Promise<void>;
+};
+
+export async function switchToArcNetwork(
+  privyWallet?: PrivyWallet | null
+) {
+  // Google / Privy Embedded Wallet
+  if (privyWallet?.switchChain) {
+    await privyWallet.switchChain(5042002);
+    return;
+  }
+
+  // External wallet (MetaMask)
   if (!window.ethereum) {
     throw new Error("MetaMask not found");
   }
 
   try {
-    // حاول تبديل الشبكة
     await window.ethereum.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: ARC_TESTNET.chainId }],
     });
   } catch (error: any) {
-    // إذا Arc Testnet ما كانتش موجودة
     if (error.code === 4902) {
       await window.ethereum.request({
         method: "wallet_addEthereumChain",

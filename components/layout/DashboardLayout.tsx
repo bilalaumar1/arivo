@@ -11,30 +11,42 @@ import FaucetCard from "../cards/FaucetCard";
 export default function DashboardLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-[#111111]">
-      <Sidebar />
+
+      {/* ================= SIDEBAR ================= */}
+{/* Sidebar handles desktop + mobile drawer */}
+<div>
+  <Sidebar />
+</div>
+
+      {/* ================= MAIN ================= */}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+
         <Topbar />
 
-        <main className="flex-1 overflow-y-auto p-7">
-          <div className="grid grid-cols-12 gap-5">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-7">
+
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
 
             {/* ================= LEFT ================= */}
 
-            <div className="col-span-8 flex flex-col gap-5">
+            <div className="col-span-1 flex min-w-0 flex-col gap-5 lg:col-span-8">
 
               {/* Balance */}
-              <div className="h-[205px] flex-shrink-0">
+
+              <div className="h-auto flex-shrink-0 lg:h-[205px]">
                 <BalanceCard />
               </div>
 
               {/* Quick Actions */}
-              <div className="h-[185px] flex-shrink-0">
+
+              <div className="h-auto flex-shrink-0 lg:h-[185px]">
                 <QuickActions />
               </div>
 
               {/* Recent Transactions */}
-              <div className="h-[300px] flex-shrink-0">
+
+              <div className="h-auto flex-shrink-0 lg:h-[300px]">
                 <Transactions />
               </div>
 
@@ -42,28 +54,34 @@ export default function DashboardLayout() {
 
             {/* ================= RIGHT ================= */}
 
-            <div className="col-span-4 flex flex-col gap-5">
+            <div className="col-span-1 flex min-w-0 flex-col gap-5 lg:col-span-4">
 
               {/* Arc */}
-              <div className="h-[205px] flex-shrink-0">
+
+              <div className="h-auto flex-shrink-0 lg:h-[205px]">
                 <ArcCard />
               </div>
 
               {/* Faucet */}
-              <div className="h-[185px] flex-shrink-0">
+
+              <div className="h-auto flex-shrink-0 lg:h-[185px]">
                 <FaucetCard />
               </div>
 
               {/* Portfolio */}
-              <div className="h-[300px] flex-shrink-0">
+
+              <div className="h-auto flex-shrink-0 lg:h-[300px]">
                 <PortfolioCard />
               </div>
 
             </div>
 
           </div>
+
         </main>
+
       </div>
+
     </div>
   );
 }

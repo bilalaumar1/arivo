@@ -321,7 +321,7 @@ function Sidebar() {
           </div>
 
           <button
-            onClick={switchToArcNetwork}
+            onClick={() => switchToArcNetwork()}
             className="mt-4 flex h-9 w-full items-center justify-center rounded-xl bg-[var(--arivo-primary)] text-[12px] font-semibold text-black transition hover:bg-[var(--arivo-primary-hover)]"
           >
             {isArcNetwork

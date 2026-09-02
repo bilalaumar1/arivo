@@ -18,6 +18,7 @@ import {
   ArrowLeftRight,
   Store,
   Info,
+  Menu,
 } from "lucide-react";
 
 import { usePrivy } from "@privy-io/react-auth";
@@ -377,6 +378,9 @@ export default function Topbar() {
     useState<ChatNotification[]>([]);
 
   const [chatOpen, setChatOpen] =
+    useState(false);
+
+  const [mobileMenuOpen, setMobileMenuOpen] =
     useState(false);
 
   const walletAddress =
@@ -1300,28 +1304,56 @@ export default function Topbar() {
   // ==========================================================
 
   return (
-    <header className="relative flex h-[76px] items-center justify-between border-b border-[#2b2b2b] bg-[#111111] px-7">
+    <header className="relative flex min-h-[168px] w-full items-start justify-between gap-3 border-b border-[#2b2b2b] bg-[#111111] px-5 py-4 lg:h-[76px] lg:min-h-0 lg:items-center lg:gap-0 lg:px-7 lg:py-0">
 
       {/* ====================================================
           LEFT
       ==================================================== */}
 
-      <div>
-        <h1 className="text-[24px] font-bold tracking-tight text-white">
-          {greeting}, {userName} 👋
-        </h1>
+      <div className="min-w-0 flex-1">
+        {/* Mobile brand row */}
+        <div className="mb-3 flex items-center gap-2 lg:hidden">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#efe5d2]">
+            <img
+              src="/arivo-icon-black.png"
+              alt="Arivo"
+              className="h-7 w-7 object-contain"
+            />
+          </div>
 
-        <p className="mt-1 text-[13px] text-zinc-500">
-          Here's what's happening with your
-          account today.
-        </p>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(true);
+              window.dispatchEvent(
+                new CustomEvent("arivo:open-mobile-sidebar")
+              );
+            }}
+            aria-label="Open menu"
+            aria-expanded={mobileMenuOpen}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#2b2b2b] bg-[#1a1a1a] text-zinc-300 transition hover:border-[#3a3a3a] hover:bg-[#232323] hover:text-white"
+          >
+            <Menu size={20} strokeWidth={2} />
+          </button>
+        </div>
+
+        <div className="min-w-0">
+          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-white md:text-[24px] lg:text-[24px]">
+            {greeting}, {userName} 👋
+          </h1>
+
+          <p className="mt-2 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:mt-1 lg:max-w-none lg:leading-normal">
+            Here's what's happening with your
+            account today.
+          </p>
+        </div>
       </div>
 
       {/* ====================================================
           RIGHT
       ==================================================== */}
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 md:gap-3">
 
         {/* ==================================================
             MESSAGES
@@ -1354,7 +1386,7 @@ export default function Topbar() {
           </button>
 
           {chatOpen ? (
-            <div className="absolute right-0 top-[56px] z-[9999] w-[350px] overflow-hidden rounded-2xl border border-[#303030] bg-[#181818] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
+            <div className="absolute right-0 top-[56px] z-[9999] w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden rounded-2xl border border-[#303030] bg-[#181818] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
               <div className="flex items-center justify-between border-b border-[#2b2b2b] px-5 py-4">
                 <div>
                   <h2 className="text-[15px] font-semibold text-white">
@@ -1523,7 +1555,7 @@ export default function Topbar() {
           ================================================= */}
 
           {notificationsOpen ? (
-            <div className="absolute right-0 top-[56px] z-[9999] w-[390px] overflow-hidden rounded-2xl border border-[#303030] bg-[#181818] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
+            <div className="absolute right-0 top-[56px] z-[9999] w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden rounded-2xl border border-[#303030] bg-[#181818] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
 
               {/* HEADER */}
 

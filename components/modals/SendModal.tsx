@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   ChevronDown,
   Check,
@@ -15,7 +15,7 @@ import { sendEURC } from "@/lib/sendEURC";
 import { getProfileByArivoId } from "@/lib/profile";
 import { getWalletBalance } from "@/lib/wallet";
 import { publicClient } from "@/lib/publicClient";
-import { formatUnits } from "viem";
+import { formatUnits, type EIP1193Provider } from "viem";
 import { useToast } from "@/components/toast/ToastProvider";
 
 type SendMethod = "arivo" | "wallet";
@@ -48,6 +48,136 @@ type RecipientProfile = {
   arivo_id: string;
 };
 
+/**
+ * Generic EIP-1193 provider shape.
+ *
+ * We intentionally do NOT use viem's EIP1193Provider type here for
+ * the chain-switch helper because Privy and browser wallets expose
+ * slightly different request() typings.
+ */
+type TransactionProvider = {
+  request: (args: {
+    method: string;
+    params?: unknown[];
+  }) => Promise<unknown>;
+};
+
+// ============================================================
+// ARC TESTNET
+// ============================================================
+
+const ARC_TESTNET_CHAIN_ID = 5042002;
+const ARC_TESTNET_CHAIN_ID_HEX = "0x4cef52";
+
+/**
+ * Used ONLY for external browser wallets such as MetaMask.
+ *
+ * IMPORTANT:
+ * Privy embedded wallets MUST NOT use wallet_switchEthereumChain
+ * through their EIP-1193 provider.
+ * They use activeWallet.switchChain(...) instead.
+ */
+async function ensureArcTestnet(
+  provider: TransactionProvider
+): Promise<void> {
+  const currentChainId = await provider.request({
+    method: "eth_chainId",
+  });
+
+  const currentChainIdNumber =
+    typeof currentChainId === "string"
+      ? parseInt(currentChainId, 16)
+      : Number(currentChainId);
+
+  if (currentChainIdNumber === ARC_TESTNET_CHAIN_ID) {
+    return;
+  }
+
+  try {
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [
+        {
+          chainId: ARC_TESTNET_CHAIN_ID_HEX,
+        },
+      ],
+    });
+  } catch (switchError) {
+    const errorCode =
+      typeof switchError === "object" &&
+      switchError !== null &&
+      "code" in switchError
+        ? Number(
+            (switchError as { code?: unknown }).code
+          )
+        : undefined;
+
+    const errorMessage =
+      switchError instanceof Error
+        ? switchError.message
+        : String(switchError);
+
+    const chainIsNotAdded =
+      errorCode === 4902 ||
+      /unsupported chain|unknown chain|chain.*not.*added/i.test(
+        errorMessage
+      );
+
+    if (!chainIsNotAdded) {
+      throw switchError;
+    }
+
+    await provider.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: ARC_TESTNET_CHAIN_ID_HEX,
+          chainName: "Arc Testnet",
+          nativeCurrency: {
+            name: "USDC",
+            symbol: "USDC",
+            decimals: 18,
+          },
+          rpcUrls: [
+            "https://rpc.testnet.arc.network",
+          ],
+          blockExplorerUrls: [
+            "https://testnet.arcscan.app",
+          ],
+        },
+      ],
+    });
+
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [
+        {
+          chainId: ARC_TESTNET_CHAIN_ID_HEX,
+        },
+      ],
+    });
+  }
+
+  const finalChainId = await provider.request({
+    method: "eth_chainId",
+  });
+
+  const finalChainIdNumber =
+    typeof finalChainId === "string"
+      ? parseInt(finalChainId, 16)
+      : Number(finalChainId);
+
+  if (finalChainIdNumber !== ARC_TESTNET_CHAIN_ID) {
+    throw new Error(
+      `Wallet is not connected to Arc Testnet. Current chain: ${finalChainIdNumber}`
+    );
+  }
+}
+
+// ============================================================
+// COMPONENT
+// ============================================================
+
 export default function SendModal({
   open,
   onClose,
@@ -55,8 +185,12 @@ export default function SendModal({
   initialMethod = "arivo",
 }: SendModalProps) {
   const { user } = usePrivy();
+  const { wallets } = useWallets();
 
-  const { success, error: toastError } = useToast();
+  const {
+    success,
+    error: toastError,
+  } = useToast();
 
   const [sendMethod, setSendMethod] =
     useState<SendMethod>(initialMethod);
@@ -94,6 +228,10 @@ export default function SendModal({
   const [eurcBalance, setEurcBalance] =
     useState("0.00");
 
+  // ==========================================================
+  // LOAD BALANCES
+  // ==========================================================
+
   const loadBalances = useCallback(async () => {
     const address = user?.wallet?.address as
       | `0x${string}`
@@ -111,22 +249,28 @@ export default function SendModal({
       setUsdcBalance(usdc);
 
       // EURC
-      const eurcRaw = await publicClient.readContract({
-        address: EURC_ADDRESS,
-        abi: erc20BalanceAbi,
-        functionName: "balanceOf",
-        args: [address],
-      });
+      const eurcRaw =
+        await publicClient.readContract({
+          address: EURC_ADDRESS,
+          abi: erc20BalanceAbi,
+          functionName: "balanceOf",
+          args: [address],
+        });
 
-      setEurcBalance(formatUnits(eurcRaw, 6));
+      setEurcBalance(
+        formatUnits(eurcRaw, 6)
+      );
     } catch (error) {
-      console.error("Failed to load send balances:", error);
+      console.error(
+        "Failed to load send balances:",
+        error
+      );
     }
   }, [user?.wallet?.address]);
 
-  // -----------------------------------------
-  // RESET
-  // -----------------------------------------
+  // ==========================================================
+  // RESET WHEN OPEN
+  // ==========================================================
 
   useEffect(() => {
     if (!open) return;
@@ -145,6 +289,10 @@ export default function SendModal({
     initialMethod,
   ]);
 
+  // ==========================================================
+  // BALANCE REFRESH
+  // ==========================================================
+
   useEffect(() => {
     if (!open) return;
 
@@ -154,12 +302,22 @@ export default function SendModal({
       loadBalances();
     };
 
-    window.addEventListener("refreshBalance", refresh);
+    window.addEventListener(
+      "refreshBalance",
+      refresh
+    );
 
     return () => {
-      window.removeEventListener("refreshBalance", refresh);
+      window.removeEventListener(
+        "refreshBalance",
+        refresh
+      );
     };
-  }, [open, loadBalances, user?.wallet?.address]);
+  }, [
+    open,
+    loadBalances,
+    user?.wallet?.address,
+  ]);
 
   const availableBalance =
     selectedAsset === "USDC"
@@ -168,9 +326,9 @@ export default function SendModal({
 
   if (!open) return null;
 
-  // -----------------------------------------
+  // ==========================================================
   // CONTINUE
-  // -----------------------------------------
+  // ==========================================================
 
   async function handleContinue() {
     setError("");
@@ -189,15 +347,25 @@ export default function SendModal({
       return;
     }
 
+    if (
+      Number(amount) >
+      Number(availableBalance)
+    ) {
+      setError(
+        `Insufficient ${selectedAsset} balance.`
+      );
+      return;
+    }
+
     try {
       setLookingUp(true);
 
       let profile: RecipientProfile | null =
         recipientProfile;
 
-      // -----------------------------------------
+      // ------------------------------------------------------
       // ARIVO ID
-      // -----------------------------------------
+      // ------------------------------------------------------
 
       if (sendMethod === "arivo") {
         const arivoId =
@@ -223,15 +391,16 @@ export default function SendModal({
           avatar: foundProfile.avatar ?? "",
           wallet: foundProfile.wallet,
           arivo_id:
-            foundProfile.arivo_id ?? arivoId,
+            foundProfile.arivo_id ??
+            arivoId,
         };
 
         setRecipientProfile(profile);
       }
 
-      // -----------------------------------------
+      // ------------------------------------------------------
       // WALLET ADDRESS
-      // -----------------------------------------
+      // ------------------------------------------------------
 
       if (sendMethod === "wallet") {
         const walletAddress =
@@ -263,9 +432,9 @@ export default function SendModal({
     }
   }
 
-  // -----------------------------------------
+  // ==========================================================
   // CONFIRM & SEND
-  // -----------------------------------------
+  // ==========================================================
 
   async function handleConfirmSend() {
     setError("");
@@ -275,6 +444,10 @@ export default function SendModal({
 
       let walletAddress =
         recipient.trim();
+
+      // ------------------------------------------------------
+      // RESOLVE ARIVO RECIPIENT
+      // ------------------------------------------------------
 
       if (sendMethod === "arivo") {
         if (!recipientProfile) {
@@ -295,6 +468,10 @@ export default function SendModal({
           recipientProfile.wallet;
       }
 
+      // ------------------------------------------------------
+      // VALIDATE WALLET
+      // ------------------------------------------------------
+
       if (
         !walletAddress.startsWith("0x") ||
         walletAddress.length !== 42
@@ -312,21 +489,95 @@ export default function SendModal({
         return;
       }
 
-      let hash: string;
+      // ------------------------------------------------------
+      // FIND ACTIVE PRIVY WALLET
+      // ------------------------------------------------------
 
-      // -----------------------------------------
+      const activeWallet =
+        wallets.find(
+          (wallet) =>
+            wallet.address.toLowerCase() ===
+            user?.wallet?.address?.toLowerCase()
+        );
+
+      // ------------------------------------------------------
+      // PROVIDER
+      // ------------------------------------------------------
+
+      let transactionProvider:
+        | TransactionProvider
+        | undefined;
+
+      if (activeWallet) {
+        /**
+         * Google / Privy embedded Arivo Wallet.
+         *
+         * Get the provider only for the transaction.
+         * Chain switching is handled separately below
+         * with activeWallet.switchChain().
+         */
+        transactionProvider =
+          (await activeWallet.getEthereumProvider()) as unknown as TransactionProvider;
+      } else if (
+        typeof window !== "undefined" &&
+        window.ethereum
+      ) {
+        /**
+         * External wallet such as MetaMask.
+         */
+        transactionProvider =
+          window.ethereum as unknown as TransactionProvider;
+      }
+
+      if (!transactionProvider) {
+        throw new Error(
+          "Wallet provider not found. Please connect a wallet."
+        );
+      }
+
+      // ------------------------------------------------------
+      // ARC TESTNET SWITCH
+      // ------------------------------------------------------
+      //
+      // THIS IS THE IMPORTANT FIX.
+      //
+      // Privy embedded wallet:
+      //   activeWallet.switchChain(5042002)
+      //
+      // External wallet:
+      //   wallet_switchEthereumChain / wallet_addEthereumChain
+      //
+      // NEVER call wallet_switchEthereumChain on the
+      // Privy embedded provider.
+      // ------------------------------------------------------
+
+      if (activeWallet) {
+        await activeWallet.switchChain(
+          ARC_TESTNET_CHAIN_ID
+        );
+      } else {
+        await ensureArcTestnet(
+          transactionProvider
+        );
+      }
+
+      // ------------------------------------------------------
       // SEND TRANSACTION
-      // -----------------------------------------
+      // ------------------------------------------------------
+
+      let hash: string;
 
       if (selectedAsset === "USDC") {
         hash = await sendUSDC(
           walletAddress as `0x${string}`,
-          amount
+          amount,
+          transactionProvider as unknown as EIP1193Provider
         );
       } else {
         hash = await sendEURC(
           walletAddress as `0x${string}`,
-          amount
+          amount,
+          transactionProvider as unknown as EIP1193Provider
         );
       }
 
@@ -335,9 +586,9 @@ export default function SendModal({
         hash
       );
 
-      // -----------------------------------------
+      // ------------------------------------------------------
       // WAIT FOR ON-CHAIN CONFIRMATION
-      // -----------------------------------------
+      // ------------------------------------------------------
 
       const receipt =
         await publicClient.waitForTransactionReceipt({
@@ -355,9 +606,9 @@ export default function SendModal({
         );
       }
 
-      // -----------------------------------------
-      // SUCCESS TOAST
-      // -----------------------------------------
+      // ------------------------------------------------------
+      // SUCCESS
+      // ------------------------------------------------------
 
       success(
         `${selectedAsset} sent successfully`,
@@ -366,9 +617,9 @@ export default function SendModal({
         )} ${selectedAsset} was sent to the recipient.`
       );
 
-      // -----------------------------------------
-      // RESET MODAL
-      // -----------------------------------------
+      // ------------------------------------------------------
+      // RESET
+      // ------------------------------------------------------
 
       setRecipient("");
       setAmount("");
@@ -377,15 +628,15 @@ export default function SendModal({
       setShowConfirmation(false);
       setAssetMenuOpen(false);
 
-      // -----------------------------------------
-      // CLOSE MODAL
-      // -----------------------------------------
+      // ------------------------------------------------------
+      // CLOSE
+      // ------------------------------------------------------
 
       onClose();
 
-      // -----------------------------------------
+      // ------------------------------------------------------
       // REFRESH BALANCE + TRANSACTIONS
-      // -----------------------------------------
+      // ------------------------------------------------------
 
       window.dispatchEvent(
         new Event("refreshBalance")
@@ -396,23 +647,33 @@ export default function SendModal({
         error
       );
 
-      const message =
-        `${selectedAsset} transaction failed. Please try again.`;
+      const rawMessage =
+        error instanceof Error
+          ? error.message
+          : String(error);
 
-      setError(message);
+      console.error(
+        "Transaction error details:",
+        rawMessage
+      );
+
+      setError(
+        `${selectedAsset} transaction failed.`
+      );
 
       toastError(
         `${selectedAsset} transaction failed`,
-        "Please try again."
+        rawMessage ||
+          "Please try again."
       );
     } finally {
       setLoading(false);
     }
   }
 
-  // -----------------------------------------
+  // ==========================================================
   // HELPERS
-  // -----------------------------------------
+  // ==========================================================
 
   function handleAssetChange(
     asset: Asset
@@ -444,35 +705,29 @@ export default function SendModal({
       ? `${recipientProfile.wallet.slice(
           0,
           8
-        )}...${recipientProfile.wallet.slice(-4)}`
+        )}...${recipientProfile.wallet.slice(
+          -4
+        )}`
       : "";
-
-  // -----------------------------------------
-  // ASSET ICON
-  // -----------------------------------------
 
   const assetIcon =
     selectedAsset === "USDC"
       ? "/usdc-logo.png"
       : "/eurc-logo.png";
 
-  // -----------------------------------------
+  // ==========================================================
   // UI
-  // -----------------------------------------
+  // ==========================================================
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-
       <div className="w-full max-w-[520px] overflow-hidden rounded-[22px] border border-[#303030] bg-[#181818] shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
 
         {!showConfirmation ? (
           <>
-            {/* =================================
-                HEADER
-            ================================= */}
+            {/* HEADER */}
 
             <div className="flex items-center justify-between border-b border-[#292929] px-7 py-5">
-
               <h2 className="text-[22px] font-semibold tracking-tight text-white">
                 Send
               </h2>
@@ -485,25 +740,19 @@ export default function SendModal({
               >
                 <X size={19} />
               </button>
-
             </div>
 
-            {/* =================================
-                BODY
-            ================================= */}
+            {/* BODY */}
 
             <div className="px-7 pb-7 pt-6">
 
-              {/* SEND TO METHOD */}
+              {/* SEND TO */}
 
               <div className="mb-6">
-
-                <div className="mb-3 flex items-center justify-between">
-
+                <div className="mb-3">
                   <p className="text-[13px] font-medium text-zinc-400">
                     Send to
                   </p>
-
                 </div>
 
                 <div className="flex rounded-xl border border-[#303030] bg-[#202020] p-1">
@@ -547,15 +796,11 @@ export default function SendModal({
                   </button>
 
                 </div>
-
               </div>
 
-              {/* =================================
-                  ASSET
-              ================================= */}
+              {/* ASSET */}
 
               <div className="mb-5">
-
                 <label className="mb-2 block text-[13px] font-medium text-zinc-400">
                   Asset
                 </label>
@@ -575,21 +820,17 @@ export default function SendModal({
                     }
                     className="flex h-[68px] w-full items-center justify-between rounded-xl border border-[#303030] bg-[#202020] px-4 transition hover:border-[#454545]"
                   >
-
                     <div className="flex items-center gap-3">
 
                       <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white">
-
                         <img
                           src={assetIcon}
                           alt={selectedAsset}
                           className="h-full w-full object-contain"
                         />
-
                       </div>
 
                       <div className="text-left">
-
                         <p className="text-[15px] font-semibold text-white">
                           {selectedAsset}
                         </p>
@@ -600,7 +841,6 @@ export default function SendModal({
                             ? "USD Coin"
                             : "Euro Coin"}
                         </p>
-
                       </div>
 
                     </div>
@@ -613,7 +853,6 @@ export default function SendModal({
                           : ""
                       }`}
                     />
-
                   </button>
 
                   {assetMenuOpen && (
@@ -630,21 +869,17 @@ export default function SendModal({
                         }
                         className="flex w-full items-center justify-between rounded-lg px-3 py-3 transition hover:bg-[#292929]"
                       >
-
                         <div className="flex items-center gap-3">
 
                           <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
-
                             <img
                               src="/usdc-logo.png"
                               alt="USDC"
                               className="h-full w-full object-contain"
                             />
-
                           </div>
 
                           <div className="text-left">
-
                             <p className="text-sm font-medium text-white">
                               USDC
                             </p>
@@ -652,7 +887,6 @@ export default function SendModal({
                             <p className="text-[11px] text-zinc-500">
                               USD Coin
                             </p>
-
                           </div>
 
                         </div>
@@ -664,7 +898,6 @@ export default function SendModal({
                             className="text-[#f3ead7]"
                           />
                         )}
-
                       </button>
 
                       {/* EURC */}
@@ -678,21 +911,17 @@ export default function SendModal({
                         }
                         className="flex w-full items-center justify-between rounded-lg px-3 py-3 transition hover:bg-[#292929]"
                       >
-
                         <div className="flex items-center gap-3">
 
                           <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
-
                             <img
                               src="/eurc-logo.png"
                               alt="EURC"
                               className="h-full w-full object-contain"
                             />
-
                           </div>
 
                           <div className="text-left">
-
                             <p className="text-sm font-medium text-white">
                               EURC
                             </p>
@@ -700,7 +929,6 @@ export default function SendModal({
                             <p className="text-[11px] text-zinc-500">
                               Euro Coin
                             </p>
-
                           </div>
 
                         </div>
@@ -712,30 +940,24 @@ export default function SendModal({
                             className="text-[#f3ead7]"
                           />
                         )}
-
                       </button>
 
                     </div>
                   )}
 
                 </div>
-
               </div>
 
-              {/* =================================
-                  RECIPIENT
-              ================================= */}
+              {/* RECIPIENT */}
 
               <div className="mb-5">
 
-                <div className="mb-2 flex items-center justify-between">
-
+                <div className="mb-2">
                   <label className="text-[13px] font-medium text-zinc-400">
                     {sendMethod === "arivo"
                       ? "Arivo ID"
                       : "Wallet address"}
                   </label>
-
                 </div>
 
                 <div className="relative">
@@ -776,12 +998,9 @@ export default function SendModal({
                   )}
 
                 </div>
-
               </div>
 
-              {/* =================================
-                  AMOUNT
-              ================================= */}
+              {/* AMOUNT */}
 
               <div className="mb-5">
 
@@ -792,7 +1011,11 @@ export default function SendModal({
                   </label>
 
                   <span className="text-[12px] text-zinc-500">
-                    Available balance
+                    Available:{" "}
+                    {Number(
+                      availableBalance
+                    ).toFixed(2)}{" "}
+                    {selectedAsset}
                   </span>
 
                 </div>
@@ -844,21 +1067,16 @@ export default function SendModal({
                     </button>
 
                   </div>
-
                 </div>
-
               </div>
 
-              {/* =================================
-                  NETWORK
-              ================================= */}
+              {/* NETWORK */}
 
               <div className="mb-5 rounded-xl border border-[#2d2d2d] bg-[#1e1e1e] px-4 py-3.5">
 
                 <div className="flex items-center justify-between">
 
                   <div>
-
                     <p className="text-[12px] text-zinc-500">
                       Network
                     </p>
@@ -866,7 +1084,6 @@ export default function SendModal({
                     <p className="mt-1 text-sm font-medium text-white">
                       Arc Testnet
                     </p>
-
                   </div>
 
                   <div className="rounded-lg bg-[#292929] px-2.5 py-1.5 text-[11px] font-medium text-zinc-400">
@@ -874,12 +1091,9 @@ export default function SendModal({
                   </div>
 
                 </div>
-
               </div>
 
-              {/* =================================
-                  ERROR
-              ================================= */}
+              {/* ERROR */}
 
               {error && (
                 <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -887,9 +1101,7 @@ export default function SendModal({
                 </div>
               )}
 
-              {/* =================================
-                  CONTINUE
-              ================================= */}
+              {/* CONTINUE */}
 
               <button
                 type="button"
@@ -898,36 +1110,35 @@ export default function SendModal({
                   loading ||
                   lookingUp ||
                   !recipient.trim() ||
-                  Number(amount) <= 0
+                  !amount ||
+                  Number(amount) <= 0 ||
+                  Number(amount) >
+                    Number(
+                      availableBalance
+                    )
                 }
                 className="flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-[#f3ead7] text-[15px] font-semibold text-black transition hover:bg-[#eadfc9] disabled:cursor-not-allowed disabled:bg-[#55524c] disabled:text-black/60"
               >
-
                 {lookingUp
                   ? "Checking..."
                   : "Continue"}
 
                 {!lookingUp && (
-                  <ArrowRight
-                    size={17}
-                  />
+                  <ArrowRight size={17} />
                 )}
-
               </button>
 
             </div>
           </>
         ) : (
-          /* =====================================
-             CONFIRMATION
-          ===================================== */
           <>
-            {/* HEADER */}
+            {/* =================================================
+                CONFIRMATION HEADER
+            ================================================= */}
 
             <div className="flex items-center justify-between border-b border-[#292929] px-7 py-5">
 
               <div>
-
                 <h2 className="text-[22px] font-semibold text-white">
                   Confirm Send
                 </h2>
@@ -935,7 +1146,6 @@ export default function SendModal({
                 <p className="mt-1 text-[12px] text-zinc-500">
                   Review the transaction before sending.
                 </p>
-
               </div>
 
               <button
@@ -948,6 +1158,8 @@ export default function SendModal({
               </button>
 
             </div>
+
+            {/* CONFIRMATION BODY */}
 
             <div className="px-7 pb-7 pt-6">
 
@@ -962,7 +1174,6 @@ export default function SendModal({
                 <div className="mt-2 flex items-center justify-center gap-2">
 
                   <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
-
                     <img
                       src={
                         selectedAsset ===
@@ -973,7 +1184,6 @@ export default function SendModal({
                       alt={selectedAsset}
                       className="h-full w-full object-contain"
                     />
-
                   </div>
 
                   <span className="text-[32px] font-semibold tracking-tight text-white">
@@ -985,7 +1195,6 @@ export default function SendModal({
                   </span>
 
                 </div>
-
               </div>
 
               {/* RECIPIENT */}
@@ -998,11 +1207,9 @@ export default function SendModal({
 
                 {sendMethod === "arivo" &&
                 recipientProfile ? (
-
                   <div className="mt-3 flex items-center gap-3">
 
                     {recipientProfile.avatar ? (
-
                       <img
                         src={
                           recipientProfile.avatar
@@ -1012,41 +1219,35 @@ export default function SendModal({
                         }
                         className="h-10 w-10 rounded-full border border-[#333] object-cover"
                       />
-
                     ) : (
-
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#303030] font-semibold text-white">
-
                         {recipientProfile.username
-                          .replace("@", "")
+                          .replace(
+                            "@",
+                            ""
+                          )
                           .charAt(0)
                           .toUpperCase()}
-
                       </div>
-
                     )}
 
                     <div>
-
                       <p className="text-sm font-medium text-white">
-
                         {recipientProfile.username.replace(
                           "@",
                           ""
                         )}
-
                       </p>
 
                       <p className="mt-0.5 text-xs text-zinc-500">
-                        {recipientProfile.arivo_id}
+                        {
+                          recipientProfile.arivo_id
+                        }
                       </p>
-
                     </div>
 
                   </div>
-
                 ) : (
-
                   <div className="mt-3 flex items-center justify-between gap-3">
 
                     <p className="break-all text-sm text-white">
@@ -1059,7 +1260,6 @@ export default function SendModal({
                     />
 
                   </div>
-
                 )}
 
               </div>
@@ -1068,7 +1268,6 @@ export default function SendModal({
 
               {sendMethod === "arivo" &&
               recipientProfile && (
-
                 <div className="mt-3 rounded-xl border border-[#303030] bg-[#202020] p-4">
 
                   <p className="text-[12px] text-zinc-500">
@@ -1080,7 +1279,6 @@ export default function SendModal({
                   </p>
 
                 </div>
-
               )}
 
               {/* NETWORK */}
@@ -1126,11 +1324,9 @@ export default function SendModal({
                   disabled={loading}
                   className="h-[52px] flex-1 rounded-xl bg-[#f3ead7] text-sm font-semibold text-black transition hover:bg-[#eadfc9] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-
                   {loading
                     ? "Sending..."
                     : "Confirm & Send"}
-
                 </button>
 
               </div>
@@ -1140,7 +1336,6 @@ export default function SendModal({
         )}
 
       </div>
-
     </div>
   );
 }

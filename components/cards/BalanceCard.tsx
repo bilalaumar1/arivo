@@ -170,7 +170,7 @@ export default function BalanceCard() {
     : "••••••";
 
   return (
-    <div className="w-full rounded-[26px] border border-[#2d2d2d] bg-[#181818] px-10 py-8">
+    <div className="relative w-full rounded-[26px] border border-[#2d2d2d] bg-[#181818] px-6 py-6 lg:px-10 lg:py-8">
 
       <div className="flex items-start justify-between">
 
@@ -178,7 +178,7 @@ export default function BalanceCard() {
             LEFT SIDE
         ========================= */}
 
-        <div>
+        <div className="min-w-0 pr-20 lg:pr-0">
 
           {/* Total Balance */}
 
@@ -193,10 +193,8 @@ export default function BalanceCard() {
           <h2 className="mt-2 flex items-end font-bold tracking-tight text-white">
 
             {/* Fixed balance area */}
-            {/* This keeps USDC/EURC + Eye
-                in the exact same position */}
 
-            <span className="inline-flex w-[135px] shrink-0 items-center text-[36px] leading-none">
+            <span className="inline-flex w-[115px] shrink-0 items-center text-[36px] leading-none lg:w-[135px]">
               {displayBalance}
             </span>
 
@@ -204,7 +202,7 @@ export default function BalanceCard() {
                 USDC / EURC SELECTOR
             ========================= */}
 
-            <div className="relative ml-[-18px] mb-1">
+            <div className="relative ml-[-8px] mb-1 lg:ml-[-18px]">
 
               <button
                 type="button"
@@ -213,7 +211,7 @@ export default function BalanceCard() {
                     (prev) => !prev
                   )
                 }
-                className="flex items-center gap-1 text-[18px] font-medium text-zinc-400 transition hover:text-white"
+                className="flex items-center gap-1 text-[17px] font-medium text-zinc-400 transition hover:text-white lg:text-[18px]"
               >
                 {selectedAsset}
 
@@ -326,7 +324,7 @@ export default function BalanceCard() {
                   ? "Hide balance"
                   : "Show balance"
               }
-              className="ml- mb-1 flex h-6 w-6 shrink-0 items-center justify-center text-zinc-500 transition hover:text-white"
+              className="ml-1 mb-1 flex h-6 w-6 shrink-0 items-center justify-center text-zinc-500 transition hover:text-white lg:ml-0"
             >
 
               {showBalance ? (
@@ -349,7 +347,7 @@ export default function BalanceCard() {
               AVAILABLE / ON HOLD
           ========================= */}
 
-          <div className="mt-7 flex gap-14">
+          <div className="mt-7 flex gap-8 lg:gap-14">
 
             {/* Available */}
 
@@ -387,22 +385,22 @@ export default function BalanceCard() {
 
         </div>
 
-        {/* =========================
-            ARIVO LOGO
-        ========================= */}
+      </div>
 
-        <div className="flex h-[88px] w-[88px] items-center justify-center rounded-[26px] bg-[var(--arivo-primary)]">
+      {/* =========================
+          ARIVO LOGO
+      ========================= */}
 
-          <Image
-            src="/arivo-icon-black.png"
-            alt="Arivo"
-            width={60}
-            height={60}
-            className="h-[60px] w-auto object-contain"
-            priority
-          />
+      <div className="absolute right-4 top-4 flex h-[76px] w-[76px] items-center justify-center rounded-[23px] bg-[var(--arivo-primary)] lg:right-7 lg:top-7 lg:h-[88px] lg:w-[88px] lg:rounded-[26px]">
 
-        </div>
+        <Image
+          src="/arivo-icon-black.png"
+          alt="Arivo"
+          width={60}
+          height={60}
+          className="h-[52px] w-auto object-contain lg:h-[60px]"
+          priority
+        />
 
       </div>
 
