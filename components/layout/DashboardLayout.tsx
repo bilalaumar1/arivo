@@ -1,5 +1,6 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import MobileBottomNav from "./MobileBottomNav";
 
 import BalanceCard from "../cards/BalanceCard";
 import ArcCard from "../cards/ArcCard";
@@ -11,24 +12,18 @@ import FaucetCard from "../cards/FaucetCard";
 export default function DashboardLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-[#111111]">
-
       {/* ================= SIDEBAR ================= */}
       <div>
         <Sidebar />
       </div>
 
       {/* ================= MAIN ================= */}
-
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-
         <Topbar />
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-7">
-
+        <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-7">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-
             {/* ================= BALANCE ================= */}
-
             <div
               className="
                 order-1
@@ -45,7 +40,6 @@ export default function DashboardLayout() {
             </div>
 
             {/* ================= ARC ================= */}
-
             <div
               className="
                 order-6
@@ -62,7 +56,6 @@ export default function DashboardLayout() {
             </div>
 
             {/* ================= QUICK ACTIONS ================= */}
-
             <div
               className="
                 order-2
@@ -79,7 +72,6 @@ export default function DashboardLayout() {
             </div>
 
             {/* ================= EXCHANGE RATES ================= */}
-
             <div
               className="
                 order-4
@@ -96,7 +88,6 @@ export default function DashboardLayout() {
             </div>
 
             {/* ================= RECENT TRANSACTIONS ================= */}
-
             <div
               className="
                 order-3
@@ -113,7 +104,6 @@ export default function DashboardLayout() {
             </div>
 
             {/* ================= PORTFOLIO ================= */}
-
             <div
               className="
                 order-5
@@ -128,13 +118,12 @@ export default function DashboardLayout() {
             >
               <PortfolioCard />
             </div>
-
           </div>
-
         </main>
-
       </div>
 
+      {/* ================= MOBILE BOTTOM NAV ================= */}
+      <MobileBottomNav />
     </div>
   );
 }
