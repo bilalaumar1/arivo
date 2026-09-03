@@ -5,7 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 
 export default function ArcCard() {
   return (
-    <div className="flex h-full flex-col justify-between rounded-[28px] border border-[#2b2b2b] bg-[#1a1a1a] p-7">
+    <div className="flex h-full flex-col justify-start rounded-[28px] border border-[#2b2b2b] bg-[#1a1a1a] p-7 lg:justify-between">
       <div>
         <p className="text-[15px] text-zinc-500">
           Built on
@@ -36,7 +36,7 @@ export default function ArcCard() {
         href="https://arc.network"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 text-sm font-medium text-zinc-400 transition hover:text-white"
+        className="mt-2 flex items-center gap-2 text-sm font-medium text-zinc-400 transition hover:text-white lg:mt-0"
       >
         Explore Arc
         <ArrowUpRight size={15} />

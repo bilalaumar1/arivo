@@ -126,6 +126,67 @@ function saveLocalNotifications(
   }
 }
 
+type NotificationPreferences = {
+  transactions: boolean;
+  payments: boolean;
+};
+
+function getNotificationPreferences(
+  walletAddress?: string
+): NotificationPreferences {
+  const defaults: NotificationPreferences = {
+    transactions: true,
+    payments: true,
+  };
+
+  if (
+    typeof window === "undefined" ||
+    !walletAddress
+  ) {
+    return defaults;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(
+      `arivo:notification-settings:${walletAddress.toLowerCase()}`
+    );
+
+    if (!raw) {
+      return defaults;
+    }
+
+    const saved =
+      JSON.parse(raw) as Partial<NotificationPreferences>;
+
+    return {
+      transactions:
+        typeof saved.transactions === "boolean"
+          ? saved.transactions
+          : defaults.transactions,
+      payments:
+        typeof saved.payments === "boolean"
+          ? saved.payments
+          : defaults.payments,
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+function isNotificationEnabled(
+  type: NotificationType,
+  walletAddress?: string
+) {
+  const preferences =
+    getNotificationPreferences(walletAddress);
+
+  if (type === "receive") {
+    return preferences.payments;
+  }
+
+  return preferences.transactions;
+}
+
 // ============================================================
 // SUPABASE MAPPER
 // ============================================================
@@ -368,6 +429,9 @@ export default function Topbar() {
   const [username, setUsername] =
     useState("");
 
+  const [profileAvatar, setProfileAvatar] =
+    useState("");
+
   const [notifications, setNotifications] =
     useState<ArivoNotification[]>([]);
 
@@ -386,6 +450,13 @@ export default function Topbar() {
   const walletAddress =
     user?.wallet?.address ?? "";
 
+  // Google profile picture (Privy Google type does not expose `picture`
+  // in its TypeScript definition, so read it safely without changing
+  // the existing runtime behavior).
+  const googlePicture =
+    (user?.google as { picture?: string } | undefined)?.picture ||
+    "";
+
   // ==========================================================
   // PROFILE
   // ==========================================================
@@ -397,6 +468,7 @@ export default function Topbar() {
 
       if (!wallet) {
         setUsername("");
+        setProfileAvatar("");
         return;
       }
 
@@ -411,11 +483,27 @@ export default function Topbar() {
               ""
             )
           );
+
+          setProfileAvatar(
+            profile.avatar ||
+            googlePicture ||
+            ""
+          );
+        } else {
+          setProfileAvatar(
+            googlePicture ||
+            ""
+          );
         }
       } catch (error) {
         console.error(
           "Failed to load profile:",
           error
+        );
+
+        setProfileAvatar(
+          googlePicture ||
+          ""
         );
       }
     }
@@ -473,9 +561,14 @@ export default function Topbar() {
         }
 
         const mapped =
-          (data ?? []).map(
-            mapSupabaseNotification
-          );
+          (data ?? [])
+            .map(mapSupabaseNotification)
+            .filter((notification) =>
+              isNotificationEnabled(
+                notification.type,
+                walletAddress
+              )
+            );
 
         if (!cancelled) {
           setNotifications(mapped);
@@ -539,6 +632,15 @@ export default function Topbar() {
                 payload.new
               );
 
+            if (
+              !isNotificationEnabled(
+                newNotification.type,
+                walletAddress
+              )
+            ) {
+              return;
+            }
+
             setNotifications(
               (current) => {
                 const alreadyExists =
@@ -584,13 +686,22 @@ export default function Topbar() {
             setNotifications(
               (current) => {
                 const updated =
-                  current.map(
-                    (item) =>
-                      item.id ===
-                      updatedNotification.id
-                        ? updatedNotification
-                        : item
-                  );
+                  isNotificationEnabled(
+                    updatedNotification.type,
+                    walletAddress
+                  )
+                    ? current.map(
+                        (item) =>
+                          item.id ===
+                          updatedNotification.id
+                            ? updatedNotification
+                            : item
+                      )
+                    : current.filter(
+                        (item) =>
+                          item.id !==
+                          updatedNotification.id
+                      );
 
                 saveLocalNotifications(
                   updated,
@@ -931,14 +1042,25 @@ export default function Topbar() {
         return;
       }
 
+      const notificationType =
+        detail.type || "info";
+
+      if (
+        !isNotificationEnabled(
+          notificationType,
+          walletAddress
+        )
+      ) {
+        return;
+      }
+
       const newNotification: ArivoNotification =
         {
           id: `${Date.now()}-${Math.random()
             .toString(36)
             .slice(2)}`,
 
-          type:
-            detail.type || "info",
+          type: notificationType,
 
           title: detail.title,
 
@@ -1304,7 +1426,7 @@ export default function Topbar() {
   // ==========================================================
 
   return (
-    <header className="relative flex min-h-[168px] w-full items-start justify-between gap-3 border-b border-[#2b2b2b] bg-[#111111] px-5 py-4 lg:h-[76px] lg:min-h-0 lg:items-center lg:gap-0 lg:px-7 lg:py-0">
+    <header className="relative flex min-h-[88px] w-full items-start justify-between gap-3 border-b border-[#2b2b2b] bg-[#111111] px-5 py-4 lg:h-[76px] lg:min-h-0 lg:items-center lg:gap-0 lg:px-7 lg:py-0">
 
       {/* ====================================================
           LEFT
@@ -1342,10 +1464,25 @@ export default function Topbar() {
             {greeting}, {userName} 👋
           </h1>
 
-          <p className="mt-2 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:mt-1 lg:max-w-none lg:leading-normal">
-            Here's what's happening with your
-            account today.
-          </p>
+          <p className="hidden lg:block mt-2 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:mt-1 lg:max-w-none lg:leading-normal">
+  Here's what's happening with your account today.
+</p>
+        </div>
+
+        {/* Mobile profile avatar */}
+        <div className="pointer-events-none absolute right-5 top-[70px] z-10 flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-[#2b2b2b] bg-[#1a1a1a] lg:hidden">
+          {profileAvatar ? (
+            <img
+              src={profileAvatar}
+              alt={`${userName} avatar`}
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-[#efe5d2] text-[18px] font-bold text-black">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1386,7 +1523,7 @@ export default function Topbar() {
           </button>
 
           {chatOpen ? (
-            <div className="absolute right-0 top-[56px] z-[9999] w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden rounded-2xl border border-[#303030] bg-[#181818] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
+            <div className="fixed left-3 right-3 top-[104px] z-[9999] w-auto max-w-none overflow-hidden rounded-2xl border border-[#303030] bg-[#181818] shadow-[0_24px_70px_rgba(0,0,0,0.55)] lg:absolute lg:left-auto lg:right-0 lg:top-[56px] lg:w-[390px] lg:max-w-[390px]">
               <div className="flex items-center justify-between border-b border-[#2b2b2b] px-5 py-4">
                 <div>
                   <h2 className="text-[15px] font-semibold text-white">
@@ -1555,7 +1692,7 @@ export default function Topbar() {
           ================================================= */}
 
           {notificationsOpen ? (
-            <div className="absolute right-0 top-[56px] z-[9999] w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden rounded-2xl border border-[#303030] bg-[#181818] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
+            <div className="fixed left-3 right-3 top-[104px] z-[9999] w-auto max-w-none overflow-hidden rounded-2xl border border-[#303030] bg-[#181818] shadow-[0_24px_70px_rgba(0,0,0,0.55)] lg:absolute lg:left-auto lg:right-0 lg:top-[56px] lg:w-[390px] lg:max-w-[390px]">
 
               {/* HEADER */}
 

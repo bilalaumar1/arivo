@@ -64,7 +64,7 @@ export default function QuickActions() {
     <>
       {/* Title */}
 
-      <h2 className="mb-4 mt-3 text-[17px] font-semibold text-white lg:mb-5 lg:mt-0">
+      <h2 className="mb-4 mt-3 ml-5 text-[17px] font-semibold text-white lg:mb-5 lg:mt-0 lg:ml-0">
   Quick Actions
 </h2>
 

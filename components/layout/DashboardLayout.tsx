@@ -13,10 +13,9 @@ export default function DashboardLayout() {
     <div className="flex h-screen overflow-hidden bg-[#111111]">
 
       {/* ================= SIDEBAR ================= */}
-{/* Sidebar handles desktop + mobile drawer */}
-<div>
-  <Sidebar />
-</div>
+      <div>
+        <Sidebar />
+      </div>
 
       {/* ================= MAIN ================= */}
 
@@ -28,52 +27,106 @@ export default function DashboardLayout() {
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
 
-            {/* ================= LEFT ================= */}
+            {/* ================= BALANCE ================= */}
 
-            <div className="col-span-1 flex min-w-0 flex-col gap-5 lg:col-span-8">
-
-              {/* Balance */}
-
-              <div className="h-auto flex-shrink-0 lg:h-[205px]">
-                <BalanceCard />
-              </div>
-
-              {/* Quick Actions */}
-
-              <div className="h-auto flex-shrink-0 lg:h-[185px]">
-                <QuickActions />
-              </div>
-
-              {/* Recent Transactions */}
-
-              <div className="h-auto flex-shrink-0 lg:h-[300px]">
-                <Transactions />
-              </div>
-
+            <div
+              className="
+                order-1
+                col-span-1
+                min-w-0
+                h-auto
+                flex-shrink-0
+                lg:col-span-8
+                lg:row-start-1
+                lg:h-[205px]
+              "
+            >
+              <BalanceCard />
             </div>
 
-            {/* ================= RIGHT ================= */}
+            {/* ================= ARC ================= */}
 
-            <div className="col-span-1 flex min-w-0 flex-col gap-5 lg:col-span-4">
+            <div
+              className="
+                order-6
+                col-span-1
+                min-w-0
+                h-auto
+                flex-shrink-0
+                lg:col-span-4
+                lg:row-start-1
+                lg:h-[205px]
+              "
+            >
+              <ArcCard />
+            </div>
 
-              {/* Arc */}
+            {/* ================= QUICK ACTIONS ================= */}
 
-              <div className="h-auto flex-shrink-0 lg:h-[205px]">
-                <ArcCard />
-              </div>
+            <div
+              className="
+                order-2
+                col-span-1
+                min-w-0
+                h-auto
+                flex-shrink-0
+                lg:col-span-8
+                lg:row-start-2
+                lg:h-[185px]
+              "
+            >
+              <QuickActions />
+            </div>
 
-              {/* Faucet */}
+            {/* ================= EXCHANGE RATES ================= */}
 
-              <div className="h-auto flex-shrink-0 lg:h-[185px]">
-                <FaucetCard />
-              </div>
+            <div
+              className="
+                order-4
+                col-span-1
+                min-w-0
+                h-auto
+                flex-shrink-0
+                lg:col-span-4
+                lg:row-start-2
+                lg:h-[185px]
+              "
+            >
+              <FaucetCard />
+            </div>
 
-              {/* Portfolio */}
+            {/* ================= RECENT TRANSACTIONS ================= */}
 
-              <div className="h-auto flex-shrink-0 lg:h-[300px]">
-                <PortfolioCard />
-              </div>
+            <div
+              className="
+                order-3
+                col-span-1
+                min-w-0
+                h-auto
+                flex-shrink-0
+                lg:col-span-8
+                lg:row-start-3
+                lg:h-[300px]
+              "
+            >
+              <Transactions />
+            </div>
 
+            {/* ================= PORTFOLIO ================= */}
+
+            <div
+              className="
+                order-5
+                col-span-1
+                min-w-0
+                h-auto
+                flex-shrink-0
+                lg:col-span-4
+                lg:row-start-3
+                lg:h-[300px]
+              "
+            >
+              <PortfolioCard />
             </div>
 
           </div>

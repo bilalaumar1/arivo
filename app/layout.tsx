@@ -18,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Arivo",
   description: "Global USDC Accounts",
+  icons: {
+  icon: "/arivo-favicon.png",
+  shortcut: "/arivo-favicon.png",
+  apple: "/arivo-favicon.png",
+},
 };
 
 export default function RootLayout({

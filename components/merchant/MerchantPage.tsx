@@ -1653,9 +1653,9 @@ export default function MerchantPage() {
       )}
 
       {paymentSuccess && current && (
-        <div className="receipt-overlay fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="receipt-card w-full max-w-[560px] overflow-hidden rounded-[26px] border border-[#333] bg-[#171717] shadow-2xl">
-            <div className="border-b border-[#2b2b2b] px-6 py-6 text-center">
+        <div className="receipt-overlay fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-2 sm:p-4 backdrop-blur-sm">
+          <div className="receipt-card max-h-[92vh] w-full max-w-[420px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-[#333] bg-[#171717] shadow-2xl lg:max-h-none lg:max-w-[560px] lg:overflow-hidden lg:rounded-[26px]">
+            <div className="border-b border-[#2b2b2b] px-4 py-4 text-center lg:px-6 lg:py-6">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
                 <Check
                   size={28}
@@ -1673,7 +1673,7 @@ export default function MerchantPage() {
               </p>
             </div>
 
-            <div id="arivo-receipt" className="p-6">
+            <div id="arivo-receipt" className="p-4 lg:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-600">
@@ -1692,7 +1692,7 @@ export default function MerchantPage() {
                 </span>
               </div>
 
-              <div className="mt-5 space-y-3 rounded-2xl border border-[#2d2d2d] bg-[#202020] p-5">
+              <div className="mt-4 space-y-3 rounded-2xl border border-[#2d2d2d] bg-[#202020] p-4 lg:mt-5 lg:p-5">
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-[11px] text-zinc-600">Service</span>
                   <span className="text-[12px] font-medium text-white">

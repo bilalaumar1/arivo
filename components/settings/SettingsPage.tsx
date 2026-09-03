@@ -60,14 +60,14 @@ function SettingsRow({
   return (
     <div
       onClick={onClick}
-      className={`w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition ${
+      className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition lg:gap-4 lg:px-5 lg:py-4 ${
         active
           ? "bg-[#242424]"
           : "hover:bg-[#1d1d1d]"
       }`}
     >
-      <div className="flex min-w-0 items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#343434] bg-[#202020] text-zinc-400">
+      <div className="flex min-w-0 items-center gap-3 lg:gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#343434] bg-[#202020] text-zinc-400 lg:h-12 lg:w-12">
           {icon}
         </div>
 
@@ -95,8 +95,73 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] =
     useState("profile");
 
-  const { user } = usePrivy();
+  const { user, logout } = usePrivy();
   const { success, error } = useToast();
+
+  const walletAddress =
+    user?.wallet?.address ?? "";
+
+  const [transactionNotifications, setTransactionNotifications] =
+    useState(true);
+
+  const [paymentNotifications, setPaymentNotifications] =
+    useState(true);
+
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    try {
+      const raw = window.localStorage.getItem(
+        `arivo:notification-settings:${walletAddress.toLowerCase()}`
+      );
+
+      if (!raw) return;
+
+      const saved = JSON.parse(raw) as {
+        transactions?: boolean;
+        payments?: boolean;
+      };
+
+      if (typeof saved.transactions === "boolean") {
+        setTransactionNotifications(saved.transactions);
+      }
+
+      if (typeof saved.payments === "boolean") {
+        setPaymentNotifications(saved.payments);
+      }
+    } catch (storageError) {
+      console.error("FAILED TO LOAD NOTIFICATION SETTINGS:", storageError);
+    }
+  }, [walletAddress]);
+
+  const saveNotificationSettings = (
+    nextTransactions: boolean,
+    nextPayments: boolean
+  ) => {
+    if (!walletAddress) return;
+
+    try {
+      window.localStorage.setItem(
+        `arivo:notification-settings:${walletAddress.toLowerCase()}`,
+        JSON.stringify({
+          transactions: nextTransactions,
+          payments: nextPayments,
+        })
+      );
+
+      window.dispatchEvent(
+        new CustomEvent("arivo-notification-settings-updated", {
+          detail: {
+            wallet: walletAddress,
+            transactions: nextTransactions,
+            payments: nextPayments,
+          },
+        })
+      );
+    } catch (storageError) {
+      console.error("FAILED TO SAVE NOTIFICATION SETTINGS:", storageError);
+    }
+  };
 
   const [avatar, setAvatar] =
     useState<string | null>(null);
@@ -123,9 +188,6 @@ export default function SettingsPage() {
 
   const fileInputRef =
     useRef<HTMLInputElement>(null);
-
-  const walletAddress =
-    user?.wallet?.address ?? "";
 
   /*
    * LOAD CURRENT USER PROFILE
@@ -746,7 +808,7 @@ export default function SettingsPage() {
 
       {/* HEADER */}
       <header className="border-b border-[#292929]">
-        <div className="flex min-h-[116px] items-center justify-between px-8 py-6">
+        <div className="flex min-h-[96px] items-center justify-between px-4 py-5 lg:min-h-[116px] lg:px-8 lg:py-6">
 
           <div className="flex items-center gap-4">
 
@@ -764,11 +826,11 @@ export default function SettingsPage() {
             </button>
 
             <div>
-              <h1 className="text-[30px] font-semibold tracking-[-0.02em]">
+              <h1 className="text-[24px] font-semibold tracking-[-0.02em] lg:text-[30px]">
                 Settings
               </h1>
 
-              <p className="mt-1 text-[14px] text-zinc-500">
+              <p className="mt-1 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:max-w-none lg:text-[14px] lg:leading-normal">
                 Manage your Arivo account, security and preferences.
               </p>
             </div>
@@ -778,7 +840,7 @@ export default function SettingsPage() {
           <div className="hidden items-center gap-2 rounded-full border border-[#343434] bg-[#191919] px-4 py-2.5 sm:flex">
             <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
 
-            <span className="text-[14px] text-zinc-300">
+            <span className="text-[12px] text-zinc-300 lg:text-[14px]">
               Arc Testnet
             </span>
           </div>
@@ -787,10 +849,10 @@ export default function SettingsPage() {
       </header>
 
       {/* CONTENT */}
-      <div className="mx-auto grid w-full max-w-[1500px] grid-cols-[300px_minmax(0,1fr)] gap-8 px-8 py-8">
+      <div className="mx-auto grid w-full max-w-[1500px] grid-cols-1 gap-5 px-4 py-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
 
         {/* SIDEBAR */}
-        <aside className="h-fit overflow-hidden rounded-2xl border border-[#2c2c2c] bg-[#171717]">
+        <aside className="h-fit min-w-0 overflow-hidden rounded-2xl border border-[#2c2c2c] bg-[#171717]">
 
           <div className="p-2">
 
@@ -983,6 +1045,9 @@ export default function SettingsPage() {
           {/* DISCONNECT */}
           <button
             type="button"
+            onClick={() => {
+              void logout();
+            }}
             className="flex w-full items-center gap-3 px-6 py-5 text-left transition hover:bg-[#202020]"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#343434] bg-[#202020] text-zinc-400">
@@ -1013,11 +1078,11 @@ export default function SettingsPage() {
             <section>
 
               <div className="mb-6">
-                <h2 className="text-[25px] font-semibold">
+                <h2 className="text-[22px] font-semibold lg:text-[25px]">
                   Profile
                 </h2>
 
-                <p className="mt-1 text-[14px] text-zinc-500">
+                <p className="mt-1 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:max-w-none lg:text-[14px] lg:leading-normal">
                   Manage your Arivo identity and account information.
                 </p>
               </div>
@@ -1027,7 +1092,7 @@ export default function SettingsPage() {
                 {/* PROFILE HEADER */}
                 <div className="flex items-center justify-between gap-6 border-b border-[#2b2b2b] px-6 py-5">
 
-                  <div className="flex min-w-0 items-center gap-4">
+                  <div className="flex min-w-0 items-center gap-3 lg:gap-4">
                     {renderAvatar(
                       true
                     )}
@@ -1055,7 +1120,7 @@ export default function SettingsPage() {
                         true
                       );
                     }}
-                    className="flex h-12 w-[180px] shrink-0 items-center justify-center gap-2 rounded-xl border border-[#373737] bg-[#1d1d1d] px-4 text-[14px] font-medium text-zinc-200 transition hover:bg-[#252525]"
+                    className="flex h-10 w-[130px] lg:h-12 lg:w-[180px] shrink-0 items-center justify-center gap-2 rounded-xl border border-[#373737] bg-[#1d1d1d] px-3 text-[12px] font-medium lg:px-4 lg:text-[14px] text-zinc-200 transition hover:bg-[#252525]"
                   >
                     <Edit3
                       size={16}
@@ -1076,7 +1141,7 @@ export default function SettingsPage() {
                   title="Arivo ID"
                   description="Your unique identity on Arivo"
                   right={
-                    <span className="flex h-12 w-[180px] items-center justify-center rounded-xl border border-[#373737] bg-[#1d1d1d] px-4 text-[14px] font-medium text-zinc-200">
+                    <span className="flex h-10 w-[130px] lg:h-12 lg:w-[180px] items-center justify-center rounded-xl border border-[#373737] bg-[#1d1d1d] px-3 text-[12px] font-medium lg:px-4 lg:text-[14px] text-zinc-200">
                       {arivoId ||
                         "—"}
                     </span>
@@ -1099,7 +1164,7 @@ export default function SettingsPage() {
                         onClick={
                           copyWallet
                         }
-                        className="flex h-12 w-[180px] items-center justify-between gap-3 rounded-xl border border-[#373737] bg-[#1d1d1d] px-4 transition hover:bg-[#252525]"
+                        className="flex h-10 w-[130px] lg:h-12 lg:w-[180px] items-center justify-between gap-3 rounded-xl border border-[#373737] bg-[#1d1d1d] px-4 transition hover:bg-[#252525]"
                       >
                         <span className="truncate text-[14px] text-zinc-200">
                           {shortenAddress(
@@ -1139,7 +1204,7 @@ export default function SettingsPage() {
                     title="Network"
                     description="Current blockchain network"
                     right={
-                      <div className="flex h-12 w-[180px] items-center justify-center gap-2 rounded-xl border border-[#373737] bg-[#1d1d1d] text-[14px] text-zinc-200">
+                      <div className="flex h-10 w-[130px] lg:h-12 lg:w-[180px] items-center justify-center gap-2 rounded-xl border border-[#373737] bg-[#1d1d1d] text-[14px] text-zinc-200">
                         <span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />
 
                         Arc Testnet
@@ -1172,11 +1237,11 @@ export default function SettingsPage() {
             <section>
 
               <div className="mb-6">
-                <h2 className="text-[25px] font-semibold">
+                <h2 className="text-[22px] font-semibold lg:text-[25px]">
                   Security
                 </h2>
 
-                <p className="mt-1 text-[14px] text-zinc-500">
+                <p className="mt-1 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:max-w-none lg:text-[14px] lg:leading-normal">
                   Protect your Arivo account and wallet.
                 </p>
               </div>
@@ -1227,11 +1292,11 @@ export default function SettingsPage() {
             <section>
 
               <div className="mb-6">
-                <h2 className="text-[25px] font-semibold">
+                <h2 className="text-[22px] font-semibold lg:text-[25px]">
                   Notifications
                 </h2>
 
-                <p className="mt-1 text-[14px] text-zinc-500">
+                <p className="mt-1 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:max-w-none lg:text-[14px] lg:leading-normal">
                   Choose what you want to receive.
                 </p>
               </div>
@@ -1247,9 +1312,32 @@ export default function SettingsPage() {
                   title="Transaction notifications"
                   description="Get notified about wallet activity"
                   right={
-                    <span className="rounded-full bg-[#242424] px-3 py-1 text-[12px] text-zinc-300">
-                      Enabled
-                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={transactionNotifications}
+                      onClick={() => {
+                        const next = !transactionNotifications;
+                        setTransactionNotifications(next);
+                        saveNotificationSettings(
+                          next,
+                          paymentNotifications
+                        );
+                      }}
+                      className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                        transactionNotifications
+                          ? "border-[#ddd1b9] bg-[#f1e8d5]"
+                          : "border-[#3a3a3a] bg-[#242424]"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full transition ${
+                          transactionNotifications
+                            ? "left-6 bg-[#111111]"
+                            : "left-1 bg-zinc-500"
+                        }`}
+                      />
+                    </button>
                   }
                 />
 
@@ -1264,9 +1352,32 @@ export default function SettingsPage() {
                   title="Payment notifications"
                   description="Receive updates about incoming payments"
                   right={
-                    <span className="rounded-full bg-[#242424] px-3 py-1 text-[12px] text-zinc-300">
-                      Enabled
-                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={paymentNotifications}
+                      onClick={() => {
+                        const next = !paymentNotifications;
+                        setPaymentNotifications(next);
+                        saveNotificationSettings(
+                          transactionNotifications,
+                          next
+                        );
+                      }}
+                      className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                        paymentNotifications
+                          ? "border-[#ddd1b9] bg-[#f1e8d5]"
+                          : "border-[#3a3a3a] bg-[#242424]"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full transition ${
+                          paymentNotifications
+                            ? "left-6 bg-[#111111]"
+                            : "left-1 bg-zinc-500"
+                        }`}
+                      />
+                    </button>
                   }
                 />
 
@@ -1281,11 +1392,11 @@ export default function SettingsPage() {
             <section>
 
               <div className="mb-6">
-                <h2 className="text-[25px] font-semibold">
+                <h2 className="text-[22px] font-semibold lg:text-[25px]">
                   Preferences
                 </h2>
 
-                <p className="mt-1 text-[14px] text-zinc-500">
+                <p className="mt-1 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:max-w-none lg:text-[14px] lg:leading-normal">
                   Customize your Arivo experience.
                 </p>
               </div>
@@ -1335,11 +1446,11 @@ export default function SettingsPage() {
             <section>
 
               <div className="mb-6">
-                <h2 className="text-[25px] font-semibold">
+                <h2 className="text-[22px] font-semibold lg:text-[25px]">
                   Wallet & Network
                 </h2>
 
-                <p className="mt-1 text-[14px] text-zinc-500">
+                <p className="mt-1 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:max-w-none lg:text-[14px] lg:leading-normal">
                   View your connected wallet and network details.
                 </p>
               </div>
@@ -1355,7 +1466,7 @@ export default function SettingsPage() {
                   title="Wallet address"
                   description="Connected wallet"
                   right={
-                    <span className="text-[14px] text-zinc-300">
+                    <span className="text-[12px] text-zinc-300 lg:text-[14px]">
                       {shortenAddress(
                         walletAddress
                       ) ||
@@ -1396,7 +1507,7 @@ export default function SettingsPage() {
                   title="Chain ID"
                   description="Current network chain identifier"
                   right={
-                    <span className="text-[14px] text-zinc-300">
+                    <span className="text-[12px] text-zinc-300 lg:text-[14px]">
                       5042002
                     </span>
                   }

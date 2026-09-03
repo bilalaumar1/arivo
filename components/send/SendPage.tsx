@@ -611,7 +611,7 @@ export default function SendPage() {
                       setError("");
                       setShowConfirmation(false);
                     }}
-                    className={`rounded-2xl border p-5 text-left transition ${
+                    className={`rounded-2xl border px-3 py-3 text-left transition lg:p-5 ${
                       method === "arivo"
                         ? "border-[#efe5d2] bg-[#efe5d2] text-black"
                         : "border-[#353535] bg-[#202020] text-white hover:border-[#555]"
@@ -640,7 +640,7 @@ export default function SendPage() {
                       setError("");
                       setShowConfirmation(false);
                     }}
-                    className={`rounded-2xl border p-5 text-left transition ${
+                    className={`rounded-2xl border px-3 py-3 text-left transition lg:p-5 ${
                       method === "wallet"
                         ? "border-[#efe5d2] bg-[#efe5d2] text-black"
                         : "border-[#353535] bg-[#202020] text-white hover:border-[#555]"

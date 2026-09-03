@@ -721,13 +721,13 @@ export default function SendModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-[520px] overflow-hidden rounded-[22px] border border-[#303030] bg-[#181818] shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
+      <div className="w-full max-w-[520px] max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden rounded-[22px] border border-[#303030] bg-[#181818] shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
 
         {!showConfirmation ? (
           <>
             {/* HEADER */}
 
-            <div className="flex items-center justify-between border-b border-[#292929] px-7 py-5">
+            <div className="flex items-center justify-between border-b border-[#292929] px-5 py-4 lg:px-7 lg:py-5">
               <h2 className="text-[22px] font-semibold tracking-tight text-white">
                 Send
               </h2>
@@ -744,7 +744,7 @@ export default function SendModal({
 
             {/* BODY */}
 
-            <div className="px-7 pb-7 pt-6">
+            <div className="px-5 pb-5 pt-5 lg:px-7 lg:pb-7 lg:pt-6">
 
               {/* SEND TO */}
 
@@ -1136,7 +1136,7 @@ export default function SendModal({
                 CONFIRMATION HEADER
             ================================================= */}
 
-            <div className="flex items-center justify-between border-b border-[#292929] px-7 py-5">
+            <div className="flex items-center justify-between border-b border-[#292929] px-5 py-4 lg:px-7 lg:py-5">
 
               <div>
                 <h2 className="text-[22px] font-semibold text-white">
@@ -1161,7 +1161,7 @@ export default function SendModal({
 
             {/* CONFIRMATION BODY */}
 
-            <div className="px-7 pb-7 pt-6">
+            <div className="px-5 pb-5 pt-5 lg:px-7 lg:pb-7 lg:pt-6">
 
               {/* AMOUNT */}
 

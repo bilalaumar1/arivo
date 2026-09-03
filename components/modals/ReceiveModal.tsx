@@ -67,38 +67,38 @@ export default function ReceiveModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm">
 
-      <div className="w-full max-w-xl rounded-3xl border border-[#2b2b2b] bg-[#181818] p-8 shadow-2xl">
+      <div className="w-full max-w-lg rounded-3xl border border-[#2b2b2b] bg-[#181818] p-6 shadow-2xl">
 
         {/* Header */}
 
         <div className="flex items-center justify-between">
 
-          <h2 className="text-2xl font-bold text-white">
+          <h2 className="text-xl font-bold text-white">
             Receive USDC
           </h2>
 
           <button
             onClick={onClose}
-            className="text-2xl text-zinc-500 transition hover:text-white"
+            className="text-xl text-zinc-500 transition hover:text-white"
           >
             ×
           </button>
 
         </div>
 
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-1.5 text-sm leading-5 text-zinc-500">
           Choose how you want to receive USDC.
         </p>
 
         {/* Receive Method */}
 
-        <div className="mt-7 grid grid-cols-2 gap-3">
+        <div className="mt-5 grid grid-cols-2 gap-2.5">
 
           <button
             onClick={() => setReceiveMethod("arivo")}
-            className={`rounded-2xl border px-4 py-4 text-left transition ${
+            className={`rounded-2xl border px-4 py-3 text-left transition ${
               receiveMethod === "arivo"
                 ? "border-[var(--arivo-primary)] bg-[var(--arivo-primary)] text-black"
                 : "border-[#2b2b2b] bg-[#202020] text-white hover:bg-[#252525]"
@@ -121,7 +121,7 @@ export default function ReceiveModal({
 
           <button
             onClick={() => setReceiveMethod("wallet")}
-            className={`rounded-2xl border px-4 py-4 text-left transition ${
+            className={`rounded-2xl border px-4 py-3 text-left transition ${
               receiveMethod === "wallet"
                 ? "border-[var(--arivo-primary)] bg-[var(--arivo-primary)] text-black"
                 : "border-[#2b2b2b] bg-[#202020] text-white hover:bg-[#252525]"
@@ -146,7 +146,7 @@ export default function ReceiveModal({
 
         {/* Description */}
 
-        <p className="mt-5 text-sm text-zinc-500">
+        <p className="mt-4 text-sm text-zinc-500">
           {receiveMethod === "arivo"
             ? "Share your Arivo ID to receive USDC on Arivo."
             : "Share your wallet address to receive USDC on Arc Testnet."}
@@ -154,35 +154,36 @@ export default function ReceiveModal({
 
         {/* QR Code */}
 
-        <div className="mt-7 flex justify-center">
+        <div className="mt-5 flex justify-center">
 
-          <div className="rounded-2xl bg-white p-4">
+          <div className="rounded-2xl bg-white p-3">
 
             <QRCode
               value={qrValue}
-              size={190}
+              size={160}
             />
 
           </div>
 
         </div>
-                {/* Value */}
 
-        <div className="mt-7">
+        {/* Value */}
 
-          <label className="mb-2 block text-sm text-zinc-400">
+        <div className="mt-5">
+
+          <label className="mb-1.5 block text-sm text-zinc-400">
             {receiveMethod === "arivo"
               ? "Arivo ID"
               : "Wallet Address"}
           </label>
 
-          <div className="rounded-xl border border-[#2b2b2b] bg-[#202020] p-4">
+          <div className="rounded-xl border border-[#2b2b2b] bg-[#202020] p-3.5">
 
             <p
               className={`text-white ${
                 receiveMethod === "arivo"
-                  ? "text-center text-lg font-semibold tracking-wide"
-                  : "break-all text-[13px]"
+                  ? "text-center text-base font-semibold tracking-wide"
+                  : "break-all text-[12px]"
               }`}
             >
               {currentValue || "Loading..."}
@@ -194,12 +195,12 @@ export default function ReceiveModal({
 
         {/* Buttons */}
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-5 flex gap-2.5">
 
           <button
             onClick={handleCopy}
             disabled={!currentValue}
-            className="h-11 flex-1 rounded-xl bg-[var(--arivo-primary)] font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-10 flex-1 rounded-xl bg-[var(--arivo-primary)] text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {copied
               ? "Copied!"
@@ -210,7 +211,7 @@ export default function ReceiveModal({
 
           <button
             onClick={onClose}
-            className="h-11 flex-1 rounded-xl border border-[#2b2b2b] text-white transition hover:bg-[#202020]"
+            className="h-10 flex-1 rounded-xl border border-[#2b2b2b] text-sm text-white transition hover:bg-[#202020]"
           >
             Close
           </button>

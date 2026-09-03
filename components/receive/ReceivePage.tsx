@@ -479,11 +479,13 @@ function ReceivePage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#111111] text-white">
-      <Sidebar />
+    <div className="flex min-h-screen w-full min-w-0 overflow-x-hidden bg-[#111111] text-white">
+      <div className="hidden lg:block">
+        <Sidebar />
+      </div>
 
       {/* MAIN */}
-      <main className="relative z-0 min-w-0 flex-1">
+      <main className="relative z-0 min-w-0 w-full flex-1 overflow-x-hidden">
 
         {/* HEADER */}
         <header className="flex h-[90px] items-center border-b border-[#292929] px-6 lg:px-9">
@@ -507,11 +509,11 @@ function ReceivePage() {
         </header>
 
         {/* CONTENT */}
-        <div className="p-5 lg:p-7">
-          <div className="grid grid-cols-12 gap-5">
+        <div className="w-full min-w-0 p-4 lg:p-7">
+          <div className="grid w-full min-w-0 grid-cols-12 gap-5">
 
             {/* LEFT */}
-            <section className="col-span-12 lg:col-span-8">
+            <section className="col-span-12 min-w-0 lg:col-span-8">
               <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6 lg:p-7">
 
                 {/* TITLE */}
@@ -574,7 +576,7 @@ function ReceivePage() {
                 </div>
 
                 {/* QR + ADDRESS */}
-                <div className="mt-7 grid gap-5 md:grid-cols-[220px_1fr]">
+                <div className="mt-7 grid w-full min-w-0 gap-5 md:grid-cols-[220px_1fr]">
 
                   {/* QR */}
                   <div className="flex flex-col items-center justify-center rounded-[22px] border border-[#353535] bg-[#202020] p-5">
@@ -594,7 +596,7 @@ function ReceivePage() {
                   </div>
 
                   {/* DETAILS */}
-                  <div className="flex flex-col gap-5">
+                  <div className="flex min-w-0 flex-col gap-5">
 
                     {/* Wallet */}
                     <div>
@@ -689,7 +691,7 @@ function ReceivePage() {
             </section>
 
             {/* RIGHT */}
-            <aside className="col-span-12 space-y-5 lg:col-span-4">
+            <aside className="col-span-12 min-w-0 space-y-5 lg:col-span-4">
 
               {/* RECEIVE SUMMARY */}
               <div className="rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-6">
