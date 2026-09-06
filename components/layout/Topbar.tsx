@@ -1426,7 +1426,7 @@ export default function Topbar() {
   // ==========================================================
 
   return (
-    <header className="relative flex min-h-[88px] w-full items-start justify-between gap-3 border-b border-[#2b2b2b] bg-[#111111] px-5 py-4 lg:h-[76px] lg:min-h-0 lg:items-center lg:gap-0 lg:px-7 lg:py-0">
+    <header className="relative flex min-h-[139px] w-full items-start justify-between gap-3 border-b border-[#2b2b2b] bg-[#111111] px-5 py-4 lg:h-[76px] lg:min-h-0 lg:items-center lg:gap-0 lg:px-7 lg:py-0">
 
       {/* ====================================================
           LEFT
@@ -1460,8 +1460,9 @@ export default function Topbar() {
         </div>
 
         <div className="min-w-0">
-          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-white md:text-[24px] lg:text-[24px]">
-            {greeting}, {userName} 👋
+          <h1 className="max-w-[220px] text-[22px] font-bold leading-tight tracking-tight text-white md:text-[24px] lg:max-w-none lg:text-[24px]">
+            <span className="block lg:inline">{greeting},</span>
+            <span className="block lg:inline lg:ml-1">{userName} 👋</span>
           </h1>
 
           <p className="hidden lg:block mt-2 max-w-[280px] text-[13px] leading-5 text-zinc-500 lg:mt-1 lg:max-w-none lg:leading-normal">
@@ -1470,7 +1471,7 @@ export default function Topbar() {
         </div>
 
         {/* Mobile profile avatar */}
-        <div className="pointer-events-none absolute right-5 top-[70px] z-10 flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-[#2b2b2b] bg-[#1a1a1a] lg:hidden">
+        <div className="pointer-events-none absolute right-5 top-[69px] z-10 flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-[#2b2b2b] bg-[#1a1a1a] lg:hidden">
           {profileAvatar ? (
             <img
               src={profileAvatar}
@@ -1490,7 +1491,22 @@ export default function Topbar() {
           RIGHT
       ==================================================== */}
 
-      <div className="flex shrink-0 items-center gap-2 md:gap-3">
+      <div className="absolute right-5 top-4 flex shrink-0 items-center gap-2 md:gap-3 lg:static">
+
+        {/* ==================================================
+            EARN
+        ================================================== */}
+        <button
+          type="button"
+          aria-label="Earn"
+          onClick={() => router.push("/dashboard/earn")}
+          className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-[#2b2b2b] bg-[#1a1a1a] text-zinc-400 transition-all duration-200 hover:border-[#3a3a3a] hover:bg-[#232323] hover:text-white lg:flex"
+        >
+          <ArrowUpRight
+            size={18}
+            strokeWidth={2}
+          />
+        </button>
 
         {/* ==================================================
             MESSAGES

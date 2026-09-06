@@ -1091,20 +1091,7 @@ export default function ContactsPage() {
 
           </section>
 
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#2b2b2b] bg-[#171717] p-4">
-
-            <ShieldCheck
-              size={17}
-              className="mt-0.5 shrink-0 text-zinc-500"
-            />
-
-            <p className="text-[11px] leading-5 text-zinc-600">
-              Contacts are tied to your Arivo wallet
-              in this prototype. Always verify the
-              recipient address before sending.
-            </p>
-
-          </div>
+          
 
         </div>
       </main>

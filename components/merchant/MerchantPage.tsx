@@ -25,7 +25,7 @@ import {
   Zap,
 } from "lucide-react";
 
-type ServiceId = "electricity" | "internet" | "mobile" | "giftcards";
+type ServiceId = "electricity" | "water" | "internet" | "mobile" | "giftcards";
 type PaymentAsset = "USDC" | "EURC";
 
 type Service = {
@@ -53,6 +53,14 @@ const services: Service[] = [
       "Enter the amount shown on your bill, then review the payment before confirming.",
     group: "Bills",
     icon: Zap,
+  },
+  {
+    id: "water",
+    title: "Water",
+    description:
+      "Enter the amount shown on your water bill, then review the payment before confirming.",
+    group: "Bills",
+    icon: Receipt,
   },
   {
     id: "internet",
@@ -243,7 +251,7 @@ export default function MerchantPage() {
     giftCardPlans[0];
 
   const orderPrice = useMemo(() => {
-    if (selectedService === "electricity") {
+    if (selectedService === "electricity" || selectedService === "water") {
       const amount = Number(billAmount);
       return Number.isFinite(amount) && amount > 0
         ? `${amount.toLocaleString(undefined, {
@@ -277,7 +285,7 @@ export default function MerchantPage() {
   ]);
 
   const serviceAmount = useMemo(() => {
-    if (selectedService === "electricity") {
+    if (selectedService === "electricity" || selectedService === "water") {
       const amount = Number(billAmount);
       return Number.isFinite(amount) && amount > 0 ? amount : null;
     }
@@ -304,7 +312,9 @@ export default function MerchantPage() {
   ]);
 
   const serviceCurrency =
-    selectedService === "electricity" || selectedService === "mobile"
+    selectedService === "electricity" ||
+    selectedService === "water" ||
+    selectedService === "mobile"
       ? countryConfig.currency
       : "USD";
 
@@ -416,7 +426,7 @@ export default function MerchantPage() {
   function canContinue() {
     if (!selectedService) return false;
 
-    if (selectedService === "electricity") {
+    if (selectedService === "electricity" || selectedService === "water") {
       return (
         identifier.trim().length > 0 &&
         address.trim().length > 0 &&
@@ -519,7 +529,11 @@ export default function MerchantPage() {
       );
 
       const createdOrder = createArivoOrder({
-        service: current.id,
+        service: current.id as
+          | "electricity"
+          | "internet"
+          | "mobile"
+          | "giftcards",
         serviceName:
           current.id === "giftcards"
             ? `${giftBrand} Gift Card`
@@ -527,11 +541,13 @@ export default function MerchantPage() {
         email,
         country:
           selectedService === "electricity" ||
+          selectedService === "water" ||
           selectedService === "mobile"
             ? countryConfig.name
             : undefined,
         localCurrency:
           selectedService === "electricity" ||
+          selectedService === "water" ||
           selectedService === "mobile"
             ? countryConfig.currency
             : "USD",
@@ -692,16 +708,17 @@ export default function MerchantPage() {
 
 
   return (
-    <div className="flex min-h-screen bg-[#111111] text-white">
+    <div className="flex min-h-screen bg-[#0f1011] text-white">
       <Sidebar />
 
-      <main className="relative z-0 min-w-0 flex-1">
+      <main className="relative z-0 min-w-0 flex-1 overflow-x-hidden">
         <header className="flex h-[88px] items-center justify-between border-b border-[#292929] px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => window.history.back()}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
+              aria-label="Go back"
             >
               <ArrowLeft size={19} />
             </button>
@@ -711,189 +728,200 @@ export default function MerchantPage() {
                 Arivo Pay
               </h1>
               <p className="mt-1 text-[13px] text-zinc-500">
-                Bills, recharge and digital purchases — paid from your
-                Arc wallet.
+                Bills, recharge and digital purchases  paid from your
+                Account.
               </p>
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-xl border border-[#303030] bg-[#191919] px-4 py-2 sm:flex">
-            <ShieldCheck size={15} className="text-green-500" />
-            <span className="text-[12px] text-zinc-300">
-              Arc Testnet
-            </span>
-          </div>
         </header>
 
-        <div className="p-6 lg:p-8">
-          <div className="mx-auto max-w-[1200px]">
-            <section className="rounded-[26px] border border-[#2d2d2d] bg-[#191919] p-6 lg:p-8">
-              <div className="max-w-[800px]">
-                <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-                  ARIVO PAY
-                </p>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-[1180px]">
+            <section className="relative min-h-[245px] overflow-hidden rounded-[24px] border border-[#202a38] bg-[radial-gradient(circle_at_72%_35%,rgba(83,123,177,0.32),transparent_26%),radial-gradient(circle_at_82%_75%,rgba(31,58,91,0.34),transparent_38%),linear-gradient(105deg,#0b1117_0%,#0d141c_42%,#111c2a_72%,#0a1016_100%)] px-6 py-8 sm:px-8 sm:py-9 lg:min-h-[245px] lg:px-10 lg:py-10">
+              <div className="pointer-events-none absolute -right-[115px] -top-[125px] h-[430px] w-[430px] rounded-full bg-[radial-gradient(circle_at_28%_28%,rgba(126,165,214,0.48),rgba(38,67,103,0.25)_34%,rgba(8,15,23,0.95)_68%)] shadow-[-35px_0_90px_rgba(56,93,137,0.22)]" />
+              <div className="pointer-events-none absolute right-[7%] -top-[25px] h-[340px] w-[340px] rounded-full border border-white/[0.05]" />
+              <div className="pointer-events-none absolute right-[15%] -top-[80px] h-[330px] w-[330px] rounded-full border border-[#6f91b8]/[0.08]" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-[58%] bg-[linear-gradient(90deg,transparent,rgba(4,10,17,0.12)_45%,rgba(3,8,14,0.48))]" />
 
-                <h2 className="mt-3 text-[32px] font-semibold tracking-[-0.03em]">
-                  Pay everyday services with your wallet.
-                </h2>
-
-                <p className="mt-3 max-w-[730px] text-[13px] leading-6 text-zinc-500">
-                  Select a service and enter the real information required
-                  for that service. Your payment asset is selected only at
-                  checkout.
-                </p>
-
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {[
-                    "Local service currency",
-                    "USDC or EURC checkout",
-                    "On-chain confirmation",
-                  ].map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full border border-[#303030] bg-[#202020] px-3 py-1.5 text-[11px] text-zinc-400"
-                    >
-                      {item}
-                    </span>
-                  ))}
+              <div className="relative z-10 flex min-h-[181px] items-center justify-between gap-8">
+                <div className="max-w-[570px]">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#8795a8]">
+                    ARIVO PAY
+                  </p>
+                  <h2 className="mt-4 max-w-[540px] text-[34px] font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-[42px] lg:text-[46px]">
+                    Everyday services,
+                    <br />
+                    <span className="text-[#b9cbed]">simplified.</span>
+                  </h2>
+                  <p className="mt-4 max-w-[430px] text-[13px] leading-5 text-[#9aa6b5] sm:text-[14px]">
+                    Pay bills, recharge and digital services directly
+                    <br className="hidden sm:block" />
+                    with Arivo Pay.
+                  </p>
                 </div>
+
+                <div className="relative z-10 hidden shrink-0 pr-4 sm:block lg:pr-8">
+                  <p className="text-[17px] leading-[1.45] text-[#c4cfdf]">
+                    Fast.
+                    <br />
+                    Secure.
+                    <br />
+                    On-chain.
+                  </p>
+                  <div className="mt-4 h-px w-8 bg-[#c4cfdf]" />
+                </div>
+              </div>
+            </section>
+
+            <section className="mt-5">
+              <div className="flex h-[54px] items-center rounded-2xl border border-[#2d3033] bg-[#17191a] px-4 transition focus-within:border-[#55595d]">
+                <input
+                  type="text"
+                  aria-label="Search services"
+                  placeholder="Search for a service (electricity, internet, mobile, ...)"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-zinc-600"
+                />
+                <button
+                  type="button"
+                  className="ml-3 hidden h-9 shrink-0 rounded-full bg-[#efe5d2] px-5 text-[12px] font-semibold text-black transition hover:bg-white sm:block"
+                >
+                  Search
+                </button>
               </div>
             </section>
 
             <section className="mt-8">
-              <h3 className="text-[19px] font-semibold">
-                Choose a service
-              </h3>
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <h3 className="text-[19px] font-semibold tracking-[-0.02em]">Popular</h3>
+                  <p className="mt-1 text-[12px] text-zinc-500">Most used services in your region.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("all-services")?.scrollIntoView({ behavior: "smooth" })}
+                  className="text-[12px] font-medium text-zinc-400 transition hover:text-white"
+                >
+                  See all
+                </button>
+              </div>
 
-              <p className="mt-1 text-[12px] text-zinc-500">
-                Prices are shown in the service's native/local currency.
-                Payment is selected later.
-              </p>
-
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                {services.map((service) => {
-                  const Icon = service.icon;
-
-                  return (
-                    <button
-                      key={service.id}
-                      type="button"
-                      onClick={() => openCheckout(service.id)}
-                      className="group rounded-[24px] border border-[#2d2d2d] bg-[#191919] p-5 text-left transition hover:-translate-y-[1px] hover:border-[#4a4a4a] hover:bg-[#1c1c1c]"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#333] bg-[#202020]">
-                          <Icon size={21} className="text-zinc-200" />
-                        </div>
-
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#2d2d2d] bg-[#1c1c1c] text-zinc-600 transition group-hover:text-white">
-                          <ArrowRight size={16} />
-                        </div>
-                      </div>
-
-                      <p className="mt-7 text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-600">
-                        {service.group}
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                {services.slice(0, 3).map((service, index) => (
+                  <button
+                    key={service.id}
+                    type="button"
+                    onClick={() => openCheckout(service.id)}
+                    className={`group relative min-h-[126px] overflow-hidden rounded-[22px] border p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#4a4d51] ${
+                      index === 0
+                        ? "border-[#403a30] bg-[linear-gradient(135deg,#282117,#17191a)]"
+                        : index === 1
+                          ? "border-[#303945] bg-[linear-gradient(135deg,#172231,#17191a)]"
+                          : "border-[#293b34] bg-[linear-gradient(135deg,#14251e,#17191a)]"
+                    }`}
+                  >
+                    <div className="absolute -bottom-20 -right-12 h-40 w-40 rounded-full border border-white/[0.05] transition duration-300 group-hover:scale-110" />
+                    <div className="relative">
+                      <p className="text-[15px] font-semibold">{service.title}</p>
+                      <p className="mt-2 text-[12px] text-zinc-500">
+                        {index === 0 ? "Pay your bill" : index === 1 ? "Stay connected" : "Top up your balance"}
                       </p>
-
-                      <h4 className="mt-2 text-[19px] font-semibold">
-                        {service.title}
-                      </h4>
-
-                      <p className="mt-2 max-w-[430px] text-[12px] leading-5 text-zinc-500">
-                        {service.description}
-                      </p>
-
-                      <div className="mt-7 border-t border-[#292929] pt-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-zinc-600">
-                            Checkout
-                          </span>
-                          <span className="text-[11px] font-medium text-zinc-300">
-                            Details → Payment
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                    </div>
+                  </button>
+                ))}
               </div>
             </section>
 
-            <section className="mt-8 grid gap-4 md:grid-cols-3">
-              {[
-                {
-                  icon: Receipt,
-                  title: "Native service pricing",
-                  text: "Bills and recharges can stay in the currency used by the service.",
-                },
-                {
-                  icon: CreditCard,
-                  title: "Payment at checkout",
-                  text: "USDC and EURC are payment assets, not the service's displayed price.",
-                },
-                {
-                  icon: ShieldCheck,
-                  title: "Confirm before fulfillment",
-                  text: "The provider should be fulfilled only after the Arc payment is confirmed.",
-                },
-              ].map((item) => {
-                const Icon = item.icon;
+            <section id="all-services" className="mt-9 scroll-mt-6">
+              <div>
+                <h3 className="text-[19px] font-semibold tracking-[-0.02em]">All services</h3>
+                <p className="mt-1 text-[12px] text-zinc-500">Browse by category and find what you need.</p>
+              </div>
 
-                return (
-                  <div
-                    key={item.title}
-                    className="rounded-[22px] border border-[#2d2d2d] bg-[#191919] p-5"
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#303030] bg-[#202020]">
-                      <Icon size={17} className="text-zinc-400" />
+              <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => openCheckout("electricity")}
+                  className="group relative min-h-[190px] overflow-hidden rounded-[22px] border border-[#303641] bg-[linear-gradient(135deg,#1b2330,#151719)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[#4a5260]"
+                >
+                  <div className="absolute -right-16 -top-16 h-52 w-52 rotate-45 border border-white/[0.05]" />
+                  <div className="relative">
+                    <p className="text-[17px] font-semibold">Bills</p>
+                    <div className="mt-5 space-y-1.5 text-[12px] text-zinc-500">
+                      <p>Electricity</p>
+                      <p>Water</p>
+                      <p>Internet</p>
                     </div>
+                  </div>
+                </button>
 
-                    <h4 className="mt-4 text-[13px] font-semibold">
-                      {item.title}
-                    </h4>
+                <button
+                  type="button"
+                  onClick={() => openCheckout("mobile")}
+                  className="group relative min-h-[190px] overflow-hidden rounded-[22px] border border-[#40382d] bg-[linear-gradient(135deg,#292318,#17191a)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[#5a4d3c]"
+                >
+                  <div className="absolute -right-16 top-10 h-56 w-20 rotate-[-38deg] border border-[#a58a5c]/10 bg-[#8c7040]/10" />
+                  <div className="relative">
+                    <p className="text-[17px] font-semibold">Mobile</p>
+                    <div className="mt-4 space-y-1.5 text-[12px] text-zinc-500">
+                      <p>Recharge</p>
+                      <p>Data bundles</p>
+                      <p>Voice plans</p>
+                    </div>
+                  </div>
+                </button>
 
-                    <p className="mt-1 text-[11px] leading-5 text-zinc-600">
-                      {item.text}
+                <button
+                  type="button"
+                  onClick={() => openCheckout("giftcards")}
+                  className="group relative min-h-[190px] overflow-hidden rounded-[22px] border border-[#393044] bg-[linear-gradient(135deg,#201b29,#17191a)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[#56486a]"
+                >
+                  <div className="absolute -right-20 -top-20 h-56 w-56 border border-[#8c65b8]/10 bg-[#6f4a91]/10" />
+                  <div className="relative">
+                    <p className="text-[17px] font-semibold">Digital</p>
+                    <div className="mt-4 space-y-1.5 text-[12px] text-zinc-500">
+                      <p>Gift cards</p>
+                      <p>Gaming</p>
+                      <p>Subscriptions</p>
+                      <p>eSIM</p>
+                    </div>
+                  </div>
+                </button>
+
+                <div className="relative min-h-[150px] overflow-hidden rounded-[22px] border border-[#30343a] bg-[linear-gradient(135deg,#1a2027,#151719)] p-5 md:col-span-2">
+                  <div className="absolute -bottom-24 left-1/3 h-48 w-[70%] rounded-full border border-white/[0.04]" />
+                  <div className="relative max-w-[460px]">
+                    <p className="text-[17px] font-semibold">Coming soon</p>
+                    <p className="mt-3 text-[12px] leading-5 text-zinc-500">
+                      More everyday services are coming soon to Arivo Pay.
                     </p>
                   </div>
-                );
-              })}
+                </div>
+              </div>
             </section>
-
-            <section className="mt-8 rounded-[22px] border border-[#2d2d2d] bg-[#191919] p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+<section className="mt-8 rounded-[22px] border border-[#292c2f] bg-[#141617] p-5 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="text-[16px] font-semibold">
-                    Payment & orders
-                  </h3>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">ARIVO PAY</p>
+                  <h3 className="mt-2 text-[16px] font-semibold">Payment &amp; orders</h3>
                   <p className="mt-1 max-w-[620px] text-[12px] leading-5 text-zinc-500">
-                    Track your service orders from blockchain confirmation
-                    through provider fulfillment, or review the full wallet
-                    transaction history.
+                    Track service orders from blockchain confirmation through provider fulfillment, or review your wallet transaction history.
                   </p>
                 </div>
-
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
-                    onClick={() =>
-                      window.location.assign("/orders")
-                    }
-                    className="flex h-10 items-center justify-center gap-2 rounded-xl bg-[#efe5d2] px-4 text-[12px] font-semibold text-black transition hover:bg-white"
+                    onClick={() => window.location.assign("/orders")}
+                    className="h-10 rounded-xl bg-[#efe5d2] px-5 text-[12px] font-semibold text-black transition hover:bg-white"
                   >
                     View orders
-                    <ArrowRight size={15} />
                   </button>
-
                   <button
                     type="button"
-                    onClick={() =>
-                      window.location.assign("/transactions")
-                    }
-                    className="flex h-10 items-center justify-center gap-2 rounded-xl border border-[#333] bg-[#202020] px-4 text-[12px] text-zinc-300 transition hover:bg-[#272727] hover:text-white"
+                    onClick={() => window.location.assign("/transactions")}
+                    className="h-10 rounded-xl border border-[#34373a] bg-[#1b1d1e] px-5 text-[12px] text-zinc-300 transition hover:bg-[#242628] hover:text-white"
                   >
                     Transactions
-                    <ArrowRight size={15} />
                   </button>
                 </div>
               </div>
@@ -925,6 +953,41 @@ export default function MerchantPage() {
             </div>
 
             <div className="min-h-0 overflow-y-auto">
+              {current.group === "Bills" && (
+                <div className="border-b border-[#2a2a2a] bg-[#141414] px-4 py-3 sm:px-6 lg:px-7">
+                  <div className="flex items-center gap-2 overflow-x-auto">
+                    {(["electricity", "water", "internet"] as ServiceId[]).map(
+                      (billService) => {
+                        const bill = services.find(
+                          (service) => service.id === billService
+                        );
+
+                        if (!bill) return null;
+
+                        return (
+                          <button
+                            key={billService}
+                            type="button"
+                            onClick={() => {
+                              setSelectedService(billService);
+                              setPaymentStep("details");
+                              setPaymentError("");
+                            }}
+                            className={`shrink-0 rounded-full border px-4 py-2 text-[11px] font-medium transition ${
+                              current.id === billService
+                                ? "border-[#efe5d2] bg-[#efe5d2] text-black"
+                                : "border-[#303030] bg-[#1c1c1c] text-zinc-400 hover:border-[#484848] hover:text-white"
+                            }`}
+                          >
+                            {bill.title}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="grid gap-0 lg:grid-cols-[1.12fr_0.88fr]">
                 <div className="border-b border-[#2a2a2a] p-6 lg:border-b-0 lg:border-r lg:p-7">
                   {paymentStep === "details" ? (
@@ -945,6 +1008,7 @@ export default function MerchantPage() {
                       </div>
 
                       {(selectedService === "electricity" ||
+                        selectedService === "water" ||
                         selectedService === "mobile") && (
                         <div className="mb-5">
                           <label className="mb-2 block text-[12px] text-zinc-400">
@@ -971,7 +1035,8 @@ export default function MerchantPage() {
                         </div>
                       )}
 
-                      {current.id === "electricity" && (
+                      {(current.id === "electricity" ||
+                        current.id === "water") && (
                         <div className="space-y-4">
                           <div>
                             <label className="mb-2 block text-[12px] text-zinc-400">
@@ -983,14 +1048,21 @@ export default function MerchantPage() {
                               onChange={(e) =>
                                 setIdentifier(e.target.value)
                               }
-                              placeholder="Enter your customer number"
+                              placeholder={
+                                current.id === "water"
+                                  ? "Enter your water customer number"
+                                  : "Enter your customer number"
+                              }
                               className={inputClass}
                             />
                           </div>
 
                           <div>
                             <label className="mb-2 block text-[12px] text-zinc-400">
-                              Bill amount · {countryConfig.currency}
+                              {current.id === "water"
+                                ? "Water bill amount"
+                                : "Bill amount"}{" "}
+                              · {countryConfig.currency}
                             </label>
 
                             <div className="relative">
@@ -1005,7 +1077,11 @@ export default function MerchantPage() {
                                   )
                                 }
                                 inputMode="decimal"
-                                placeholder="Enter the amount shown on your bill"
+                                placeholder={
+                                  current.id === "water"
+                                    ? "Enter the amount shown on your water bill"
+                                    : "Enter the amount shown on your bill"
+                                }
                                 className={`${inputClass} pr-20`}
                               />
 
@@ -1025,7 +1101,11 @@ export default function MerchantPage() {
                               onChange={(e) =>
                                 setAddress(e.target.value)
                               }
-                              placeholder="Full service address"
+                              placeholder={
+                                current.id === "water"
+                                  ? "Full water service address"
+                                  : "Full service address"
+                              }
                               className={inputClass}
                             />
                           </div>
@@ -1418,7 +1498,7 @@ export default function MerchantPage() {
                           </span>
                         </div>
 
-                        {current.id === "electricity" && (
+                        {(current.id === "electricity" || current.id === "water") && (
                           <div className="mt-3 flex items-center justify-between">
                             <span className="text-[11px] text-zinc-600">
                               Bill account

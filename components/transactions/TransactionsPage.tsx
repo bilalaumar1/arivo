@@ -314,7 +314,7 @@ export default function TransactionsPage() {
               </h1>
 
               <p className="mt-1 text-[13px] text-zinc-500">
-                View and manage your transaction history on Arc Testnet.
+                View and manage your transaction history.
               </p>
             </div>
           </div>

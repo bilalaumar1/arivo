@@ -13,6 +13,7 @@ import { formatUnits } from "viem";
 
 import { getWalletBalance } from "@/lib/wallet";
 import { publicClient } from "@/lib/publicClient";
+import useEarnPosition from "@/lib/contracts/lending/useEarnPosition";
 
 const EURC_ADDRESS =
   "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as const;
@@ -41,6 +42,7 @@ type Asset = "USDC" | "EURC";
 
 export default function BalanceCard() {
   const { user } = usePrivy();
+  const { positions: earnPositions } = useEarnPosition();
 
   const [selectedAsset, setSelectedAsset] =
     useState<Asset>("USDC");
@@ -151,6 +153,20 @@ export default function BalanceCard() {
     selectedAsset === "USDC"
       ? usdcBalance
       : eurcBalance;
+
+  const suppliedBalance =
+    selectedAsset === "USDC"
+      ? earnPositions?.USDC?.suppliedFormatted ?? "0.00"
+      : earnPositions?.EURC?.suppliedFormatted ?? "0.00";
+
+  const formattedSuppliedBalance =
+    Number(suppliedBalance).toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    );
 
   const formattedBalance =
     Number(balance).toLocaleString(
@@ -375,7 +391,7 @@ export default function BalanceCard() {
 
               <p className="mt-1 text-[16px] font-semibold text-white">
                 {showBalance
-                  ? `0.00 ${selectedAsset}`
+                  ? `${formattedSuppliedBalance} ${selectedAsset}`
                   : `•••• ${selectedAsset}`}
               </p>
 

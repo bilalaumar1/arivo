@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Bell,
@@ -92,6 +93,7 @@ function SettingsRow({
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [activeSection, setActiveSection] =
     useState("profile");
 
@@ -178,6 +180,9 @@ export default function SettingsPage() {
     useState(false);
 
   const [saving, setSaving] =
+    useState(false);
+
+  const [disconnecting, setDisconnecting] =
     useState(false);
 
   const [uploading, setUploading] =
@@ -837,13 +842,7 @@ export default function SettingsPage() {
 
           </div>
 
-          <div className="hidden items-center gap-2 rounded-full border border-[#343434] bg-[#191919] px-4 py-2.5 sm:flex">
-            <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
 
-            <span className="text-[12px] text-zinc-300 lg:text-[14px]">
-              Arc Testnet
-            </span>
-          </div>
 
         </div>
       </header>
@@ -1045,10 +1044,26 @@ export default function SettingsPage() {
           {/* DISCONNECT */}
           <button
             type="button"
-            onClick={() => {
-              void logout();
+            disabled={disconnecting}
+            onClick={async () => {
+              if (disconnecting) return;
+
+              setDisconnecting(true);
+
+              try {
+                await logout();
+              } catch (err) {
+                // Privy can return a logout/session API error while the
+                // client still needs to leave the protected page.
+                console.error("PRIVY LOGOUT ERROR:", err);
+              } finally {
+                // Always leave Settings after Disconnect.
+                // A hard navigation also forces Privy to re-initialize
+                // its authentication state on the login page.
+                window.location.replace("/");
+              }
             }}
-            className="flex w-full items-center gap-3 px-6 py-5 text-left transition hover:bg-[#202020]"
+            className="flex w-full items-center gap-3 px-6 py-5 text-left transition hover:bg-[#202020] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#343434] bg-[#202020] text-zinc-400">
               <LogOut
@@ -1058,11 +1073,13 @@ export default function SettingsPage() {
 
             <div>
               <p className="text-[15px] font-medium text-zinc-300">
-                Disconnect
+                {disconnecting ? "Disconnecting..." : "Disconnect"}
               </p>
 
               <p className="mt-0.5 text-[12px] text-zinc-500">
-                Disconnect your wallet
+                {disconnecting
+                  ? "Disconnecting your wallet"
+                  : "Disconnect your wallet"}
               </p>
             </div>
           </button>

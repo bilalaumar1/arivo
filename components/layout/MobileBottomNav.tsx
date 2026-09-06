@@ -5,7 +5,7 @@ import {
   Home,
   ArrowUpRight,
   ArrowDown,
-  User,
+  Landmark,
 } from "lucide-react";
 
 export default function MobileBottomNav() {
@@ -16,7 +16,7 @@ export default function MobileBottomNav() {
     pathname === path || pathname.startsWith(`${path}/`);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-[#2b2b2b] bg-[#111111]/95 px-2 pb-[max(6px,env(safe-area-inset-bottom))] pt-1 backdrop-blur-lg lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-[90] border-t border-[#2b2b2b] bg-[#111111]/95 px-2 pb-[max(6px,env(safe-area-inset-bottom))] pt-1 backdrop-blur-lg lg:hidden">
       <div className="mx-auto flex h-[60px] max-w-md items-end justify-between">
         {/* Dashboard */}
         <button
@@ -80,19 +80,19 @@ export default function MobileBottomNav() {
           </span>
         </button>
 
-        {/* Profile */}
+        {/* Earn */}
         <button
           type="button"
-          onClick={() => router.push("/settings")}
+          onClick={() => router.push("/dashboard/earn")}
           className={`flex flex-1 flex-col items-center justify-end gap-1 ${
-            isActive("/settings")
+            isActive("/dashboard/earn")
               ? "text-[#efe5d2]"
               : "text-zinc-500"
           }`}
         >
-          <User size={20} strokeWidth={2} />
+          <Landmark size={20} strokeWidth={2} />
           <span className="text-[10px] font-medium">
-            Profile
+            Earn
           </span>
         </button>
       </div>
