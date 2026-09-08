@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { sendUSDC } from "@/lib/sendUSDC";
 import { sendEURC } from "@/lib/sendEURC";
 import { getProfileByArivoId } from "@/lib/profile";
@@ -15,6 +15,7 @@ import {
   parseUnits,
   erc20Abi,
   type Address,
+  type EIP1193Provider,
 } from "viem";
 
 import {
@@ -51,8 +52,102 @@ const TOKEN_ADDRESSES = {
     "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as Address,
 } as const;
 
+type TransactionProvider = {
+  request: (args: {
+    method: string;
+    params?: unknown[];
+  }) => Promise<unknown>;
+};
+
+const ARC_TESTNET_CHAIN_ID = 5042002;
+const ARC_TESTNET_CHAIN_ID_HEX = "0x4cef52";
+
+async function ensureExternalWalletOnArc(
+  provider: TransactionProvider
+): Promise<void> {
+  const currentChainId = await provider.request({
+    method: "eth_chainId",
+  });
+
+  const currentChainIdNumber =
+    typeof currentChainId === "string"
+      ? parseInt(currentChainId, 16)
+      : Number(currentChainId);
+
+  if (currentChainIdNumber === ARC_TESTNET_CHAIN_ID) {
+    return;
+  }
+
+  try {
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ARC_TESTNET_CHAIN_ID_HEX }],
+    });
+  } catch (switchError) {
+    const errorCode =
+      typeof switchError === "object" &&
+      switchError !== null &&
+      "code" in switchError
+        ? Number((switchError as { code?: unknown }).code)
+        : undefined;
+
+    const errorMessage =
+      switchError instanceof Error
+        ? switchError.message
+        : String(switchError);
+
+    const chainIsNotAdded =
+      errorCode === 4902 ||
+      /unsupported chain|unknown chain|chain.*not.*added/i.test(
+        errorMessage
+      );
+
+    if (!chainIsNotAdded) {
+      throw switchError;
+    }
+
+    await provider.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: ARC_TESTNET_CHAIN_ID_HEX,
+          chainName: "Arc Testnet",
+          nativeCurrency: {
+            name: "USDC",
+            symbol: "USDC",
+            decimals: 18,
+          },
+          rpcUrls: ["https://rpc.testnet.arc.network"],
+          blockExplorerUrls: ["https://testnet.arcscan.app"],
+        },
+      ],
+    });
+
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ARC_TESTNET_CHAIN_ID_HEX }],
+    });
+  }
+
+  const finalChainId = await provider.request({
+    method: "eth_chainId",
+  });
+
+  const finalChainIdNumber =
+    typeof finalChainId === "string"
+      ? parseInt(finalChainId, 16)
+      : Number(finalChainId);
+
+  if (finalChainIdNumber !== ARC_TESTNET_CHAIN_ID) {
+    throw new Error(
+      `Wallet is not connected to Arc Testnet. Current chain: ${finalChainIdNumber}`
+    );
+  }
+}
+
 export default function SendPage() {
   const { user } = usePrivy();
+  const { wallets } = useWallets();
   const { success, error: toastError } = useToast();
   const { t } = useI18n();
 
@@ -404,17 +499,65 @@ export default function SendPage() {
         return;
       }
 
+      // ---------------------------------------------------------
+      // GET THE REAL TRANSACTION PROVIDER
+      // ---------------------------------------------------------
+      // Privy embedded wallet (Google / Arivo Wallet) must use
+      // its own Ethereum provider. External wallets use the
+      // browser wallet provider.
+      const activeWallet = wallets.find(
+        (wallet) =>
+          wallet.address.toLowerCase() ===
+          user?.wallet?.address?.toLowerCase()
+      );
+
+      let transactionProvider: TransactionProvider | undefined;
+      let senderAddress: Address | undefined;
+
+      if (activeWallet) {
+        transactionProvider =
+          (await activeWallet.getEthereumProvider()) as unknown as TransactionProvider;
+        senderAddress = activeWallet.address as Address;
+
+        if (!transactionProvider) {
+          throw new Error("Privy wallet provider not available.");
+        }
+
+        // NEVER use wallet_switchEthereumChain through the Privy provider.
+        await activeWallet.switchChain(ARC_TESTNET_CHAIN_ID);
+      } else if (typeof window !== "undefined" && window.ethereum) {
+        transactionProvider =
+          window.ethereum as unknown as TransactionProvider;
+        senderAddress = user?.wallet?.address as Address | undefined;
+
+        if (!senderAddress) {
+          throw new Error("Connected wallet address not found.");
+        }
+
+        await ensureExternalWalletOnArc(transactionProvider);
+      }
+
+      if (!transactionProvider || !senderAddress) {
+        throw new Error(
+          "Wallet provider not found. Please connect a wallet."
+        );
+      }
+
       let hash: string;
 
       if (asset.symbol === "USDC") {
         hash = await sendUSDC(
           walletAddress as `0x${string}`,
-          amount
+          amount,
+          transactionProvider as unknown as EIP1193Provider,
+          senderAddress
         );
       } else {
         hash = await sendEURC(
           walletAddress as `0x${string}`,
-          amount
+          amount,
+          transactionProvider as unknown as EIP1193Provider,
+          senderAddress
         );
       }
 
@@ -431,18 +574,18 @@ export default function SendPage() {
       // Create a notification for the sender.
       // This does not affect the transaction if notification creation fails.
       try {
-        const senderAddress = user?.wallet?.address;
+        const notificationSenderAddress = user?.wallet?.address;
 
-        if (senderAddress) {
+        if (notificationSenderAddress) {
           await createNotification({
-            recipientAddress: senderAddress,
+            recipientAddress: notificationSenderAddress,
             type: "send",
             title: `${asset.symbol} sent`,
             message: `${Number(amount).toFixed(2)} ${asset.symbol} sent to ${walletAddress}`,
             transactionHash: hash,
             asset: asset.symbol,
             amount: Number(amount),
-            senderAddress,
+            senderAddress: notificationSenderAddress,
           });
         }
       } catch (notificationError) {

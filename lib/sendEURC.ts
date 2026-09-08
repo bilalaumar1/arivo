@@ -4,9 +4,10 @@ import {
   parseUnits,
   erc20Abi,
   type EIP1193Provider,
+  type Address,
 } from "viem";
 
-import { arcTestnet } from "viem/chains";
+import { publicClient } from "./publicClient";
 
 const EURC_ADDRESS =
   "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as const;
@@ -14,7 +15,8 @@ const EURC_ADDRESS =
 export async function sendEURC(
   recipient: `0x${string}`,
   amount: string,
-  provider?: EIP1193Provider
+  provider?: EIP1193Provider,
+  account?: Address
 ) {
   const transactionProvider =
     provider ??
@@ -27,19 +29,23 @@ export async function sendEURC(
   }
 
   const walletClient = createWalletClient({
-    chain: arcTestnet,
     transport: custom(transactionProvider),
   });
 
-  const [account] = await walletClient.getAddresses();
+  // Privy embedded providers may not expose the active account
+  // through eth_accounts. Use the wallet address supplied by the
+  // caller when available, while keeping the old fallback for
+  // external wallets.
+  const resolvedAccount =
+    account ?? (await walletClient.getAddresses())[0];
 
-  if (!account) {
+  if (!resolvedAccount) {
     throw new Error("Wallet account not found");
   }
 
   const hash = await walletClient.writeContract({
-    account,
-    chain: arcTestnet,
+    account: resolvedAccount,
+    chain: publicClient.chain,
     address: EURC_ADDRESS,
     abi: erc20Abi,
     functionName: "transfer",
@@ -47,6 +53,10 @@ export async function sendEURC(
       recipient,
       parseUnits(amount, 6),
     ],
+  });
+
+  await publicClient.waitForTransactionReceipt({
+    hash,
   });
 
   return hash;
