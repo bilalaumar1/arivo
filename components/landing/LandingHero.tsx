@@ -9,7 +9,7 @@ export default function LandingHero() {
     <section className="border-b border-black/[0.08]">
       <div className="mx-auto grid min-h-[calc(100vh-76px)] w-full max-w-[1440px] items-center gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-2 lg:gap-6 lg:px-12 lg:py-16">
         {/* LEFT */}
-        <div className="max-w-[650px]">
+        <div className="max-w-[650px] lg:-translate-y-20">
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-black/15 bg-white/40 px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#222222]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#111111]" />
             Built on Arc
