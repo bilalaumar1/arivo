@@ -344,7 +344,7 @@ export default function ContactsPage() {
     setArivoUser(null);
 
     if (!id) {
-      setArivoError(t("common", "enterArivoId"));
+      setArivoError(t("contacts", "enterArivoId"));
       return;
     }
 
@@ -355,14 +355,14 @@ export default function ContactsPage() {
 
       if (!profile) {
         setArivoError(
-          t("common", "noArivoUserFound")
+          t("contacts", "noArivoUserFound")
         );
         return;
       }
 
       if (!profile.wallet) {
         setArivoError(
-          t("common", "arivoUserNoWallet")
+          t("contacts", "arivoUserNoWallet")
         );
         return;
       }
@@ -377,7 +377,7 @@ export default function ContactsPage() {
       console.error(err);
 
       setArivoError(
-        t("common", "searchFailed")
+        t("contacts", "searchFailed")
       );
     } finally {
       setSearchingArivo(false);
@@ -387,7 +387,7 @@ export default function ContactsPage() {
   function saveArivoUser() {
     if (!walletAddress || !arivoUser) {
       setError(
-        t("common", "connectWalletFirst")
+        t("contacts", "connectWalletFirst")
       );
       return;
     }
@@ -400,7 +400,7 @@ export default function ContactsPage() {
 
     if (exists) {
       setError(
-        t("common", "recipientAlreadySaved")
+        t("contacts", "recipientAlreadySaved")
       );
       return;
     }
@@ -429,7 +429,7 @@ export default function ContactsPage() {
       setError(
         err instanceof Error
           ? err.message
-          : t("common", "unableToSaveContact")
+          : t("contacts", "unableToSaveContact")
       );
     }
   }
@@ -441,7 +441,7 @@ export default function ContactsPage() {
 
     if (!walletAddress) {
       setError(
-        t("common", "connectWalletFirst")
+        "Connect your Arivo wallet first."
       );
       return;
     }
@@ -451,14 +451,14 @@ export default function ContactsPage() {
       !manualAddress.trim()
     ) {
       setError(
-        t("common", "completeContactDetails")
+        t("contacts", "completeContactDetails")
       );
       return;
     }
 
     if (!isValidWalletAddress(manualAddress)) {
       setError(
-        t("common", "invalidWalletAddress")
+        t("contacts", "invalidWalletAddress")
       );
       return;
     }
@@ -487,7 +487,7 @@ export default function ContactsPage() {
       setError(
         err instanceof Error
           ? err.message
-          : t("common", "unableToSaveContact")
+          : "Unable to save contact."
       );
     }
   }
@@ -547,7 +547,7 @@ export default function ContactsPage() {
 
         <main className="flex min-h-screen min-w-0 flex-1 items-center justify-center">
           <p className="text-sm text-zinc-500">
-            {t("common", "loadingAccount")}
+            {t("contacts", "loadingAccount")}
           </p>
         </main>
       </div>
@@ -581,8 +581,7 @@ export default function ContactsPage() {
                 </h1>
 
                 <p className="mt-1 text-[13px] text-zinc-500">
-                  {t("common",
-                    "contactsPageDescription")}
+                  {t("contacts", "pageDescription")}
                 </p>
               </div>
 
@@ -596,7 +595,7 @@ export default function ContactsPage() {
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--arivo-primary)] px-4 text-[12px] font-semibold text-black transition hover:bg-[var(--arivo-primary-hover)]"
             >
               <Plus size={16} />
-              {t("common", "addContact")}
+              {t("contacts", "addContact")}
             </button>
           </header>
 
@@ -610,7 +609,7 @@ export default function ContactsPage() {
 
             <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-5">
               <p className="text-[10px] font-medium tracking-[0.16em] text-zinc-500">
-                {t("common", "savedContacts").toUpperCase()}
+                {t("contacts", "savedContacts").toUpperCase()}
               </p>
 
               <p className="mt-2 text-2xl font-semibold">
@@ -618,27 +617,27 @@ export default function ContactsPage() {
               </p>
 
               <p className="mt-1 text-xs text-zinc-600">
-                {t("common", "reusableRecipients")}
+                {t("contacts", "reusableRecipients")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-5">
               <p className="text-[10px] font-medium tracking-[0.16em] text-zinc-500">
-                {t("common", "arivoLookup").toUpperCase()}
+                {t("contacts", "arivoLookup").toUpperCase()}
               </p>
 
               <p className="mt-2 text-2xl font-semibold">
-                {t("common", "onDemand")}
+                {t("contacts", "onDemand")}
               </p>
 
               <p className="mt-1 text-xs text-zinc-600">
-                {t("common", "searchWhenNeeded")}
+                {t("contacts", "searchWhenNeeded")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-5">
               <p className="text-[10px] font-medium tracking-[0.16em] text-zinc-500">
-                {t("common", "favorites").toUpperCase()}
+                {t("contacts", "favorites").toUpperCase()}
               </p>
 
               <p className="mt-2 text-2xl font-semibold">
@@ -651,7 +650,7 @@ export default function ContactsPage() {
               </p>
 
               <p className="mt-1 text-xs text-zinc-600">
-                {t("common", "frequentRecipients")}
+                {t("contacts", "frequentRecipients")}
               </p>
             </div>
 
@@ -669,14 +668,12 @@ export default function ContactsPage() {
                   />
 
                   <h2 className="text-[15px] font-semibold">
-                    {t("common", "findSomeoneOnArivo")}
+                    {t("contacts", "findSomeoneOnArivo")}
                   </h2>
                 </div>
 
                 <p className="mt-1 text-[11px] text-zinc-600">
-                  {t("common",
-                    "arivoSearchDescription"
-                  )}
+                  {t("contacts", "arivoSearchDescription")}
                 </p>
               </div>
 
@@ -691,7 +688,7 @@ export default function ContactsPage() {
                       event.target.value
                     )
                   }
-                  placeholder="ARV-XXXX-XXXX"
+                  placeholder={t("contacts", "arivoIdPlaceholder")}
                   className="h-11 min-w-0 flex-1 rounded-xl border border-[#303030] bg-[#202020] px-3 font-mono text-xs text-white outline-none placeholder:text-zinc-700 focus:border-[#4b4b4b]"
                 />
 
@@ -701,8 +698,8 @@ export default function ContactsPage() {
                   className="h-11 shrink-0 rounded-xl bg-[var(--arivo-primary)] px-4 text-xs font-semibold text-black disabled:opacity-60"
                 >
                   {searchingArivo
-                    ? t("common", "searching")
-                    : t("common", "search")}
+                    ? t("contacts", "searching")
+                    : t("contacts", "search")}
                 </button>
               </form>
 
@@ -770,7 +767,7 @@ export default function ContactsPage() {
                       className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--arivo-primary)] px-4 text-xs font-semibold text-black"
                     >
                       <Plus size={15} />
-                      {t("common", "saveContact")}
+                      {t("contacts", "saveContact")}
                     </button>
 
                   </div>
@@ -799,7 +796,7 @@ export default function ContactsPage() {
                       event.target.value
                     )
                   }
-                  placeholder={t("common", "searchSavedPlaceholder")}
+                  placeholder={t("contacts", "searchSavedPlaceholder")}
                   className="h-11 w-full rounded-xl border border-[#2b2b2b] bg-[#202020] pl-10 pr-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[#454545]"
                 />
 
@@ -818,7 +815,7 @@ export default function ContactsPage() {
                       : "text-zinc-500"
                   }`}
                 >
-                  {t("common", "all")}
+                  {t("contacts", "all")}
                 </button>
 
                 <button
@@ -832,7 +829,7 @@ export default function ContactsPage() {
                       : "text-zinc-500"
                   }`}
                 >
-                  {t("common", "favorites")}
+                  {t("contacts", "favorites")}
                 </button>
 
               </div>
@@ -921,8 +918,8 @@ export default function ContactsPage() {
 
                           {copiedId ===
                           contact.id
-                            ? t("common", "copied")
-                            : t("common", "copy")}
+                            ? t("contacts", "copied")
+                            : t("contacts", "copy")}
                         </button>
 
                         <Link
@@ -955,7 +952,7 @@ export default function ContactsPage() {
                               )
                             }
                             className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#303030] bg-[#202020] text-zinc-500 hover:bg-[#282828] hover:text-white"
-                            aria-label={`${t("common", "moreOptionsFor")} ${contact.name}`}
+                            aria-label={`${t("contacts", "moreOptionsFor")} ${contact.name}`}
                           >
                             <MoreHorizontal
                               size={17}
@@ -985,8 +982,8 @@ export default function ContactsPage() {
                                 />
 
                                 {contact.favorite
-                                  ? t("common", "removeFromFavorites")
-                                  : t("common", "addToFavorites")}
+                                  ? t("contacts", "removeFromFavorites")
+                                  : t("contacts", "addToFavorites")}
                               </button>
 
                               <button
@@ -999,7 +996,7 @@ export default function ContactsPage() {
                                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs text-zinc-300 hover:bg-[#282828] hover:text-white"
                               >
                                 <Copy size={15} />
-                                {t("common", "copyWalletAddress")}
+                                {t("contacts", "copyWalletAddress")}
                               </button>
 
                               <Link
@@ -1018,7 +1015,7 @@ export default function ContactsPage() {
                                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs text-zinc-300 hover:bg-[#282828] hover:text-white"
                               >
                                 <Send size={15} />
-                                {t("common", "send")} money
+                                {t("contacts", "sendMoney")}
                               </Link>
 
                               <Link
@@ -1033,7 +1030,7 @@ export default function ContactsPage() {
                                 <MessageCircle
                                   size={15}
                                 />
-                                {t("common", "message")}
+                                {t("contacts", "message")}
                               </Link>
 
                               <div className="my-1 border-t border-[#2b2b2b]" />
@@ -1050,7 +1047,7 @@ export default function ContactsPage() {
                                 <Trash2
                                   size={15}
                                 />
-                                {t("common", "deleteContact")}
+                                {t("contacts", "deleteContact")}
                               </button>
 
                             </div>
@@ -1078,14 +1075,12 @@ export default function ContactsPage() {
                 <h2 className="mt-5 text-base font-semibold">
                   {savedQuery ||
                   favoritesOnly
-                    ? t("common", "noMatchingContacts")
-                    : t("common", "noSavedContacts")}
+                    ? t("contacts", "noMatchingContacts")
+                    : t("contacts", "noSavedContacts")}
                 </h2>
 
                 <p className="mt-2 max-w-md text-xs leading-5 text-zinc-600">
-                  Search an Arivo ID above to find
-                  a person, or add a wallet address
-                  manually.
+                  {t("contacts", "emptyStateDescription")}
                 </p>
 
               </div>
@@ -1107,11 +1102,11 @@ export default function ContactsPage() {
 
               <div>
                 <p className="text-[10px] font-medium tracking-[0.18em] text-zinc-500">
-                  {t("common", "recipient").toUpperCase()}
+                  {t("contacts", "recipient").toUpperCase()}
                 </p>
 
                 <h2 className="mt-1 text-lg font-semibold">
-                  {t("common", "addContact")}
+                  {t("contacts", "addContact")}
                 </h2>
               </div>
 
@@ -1133,7 +1128,7 @@ export default function ContactsPage() {
 
               <div>
                 <label className="text-xs font-medium text-zinc-400">
-                  {t("common", "contactName")}
+                  {t("contacts", "contactName")}
                 </label>
 
                 <input
@@ -1143,7 +1138,7 @@ export default function ContactsPage() {
                       event.target.value
                     )
                   }
-                  placeholder={t("common", "contactNamePlaceholder")}
+                  placeholder={t("contacts", "namePlaceholder")}
                   required
                   className="mt-2 h-11 w-full rounded-xl border border-[#303030] bg-[#202020] px-3 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-[#4b4b4b]"
                 />
@@ -1151,7 +1146,7 @@ export default function ContactsPage() {
 
               <div>
                 <label className="text-xs font-medium text-zinc-400">
-                  {t("common", "recipientWalletAddress")}
+                  {t("contacts", "recipientWalletAddress")}
                 </label>
 
                 <input
@@ -1169,9 +1164,9 @@ export default function ContactsPage() {
 
               <div>
                 <label className="text-xs font-medium text-zinc-400">
-                  {t("common", "note")}{" "}
+                  {t("contacts", "note")}{" "}
                   <span className="text-zinc-700">
-                    {t("common", "optional")}
+                    {t("contacts", "optional")}
                   </span>
                 </label>
 
@@ -1182,7 +1177,7 @@ export default function ContactsPage() {
                       event.target.value
                     )
                   }
-                  placeholder={t("common", "notePlaceholder")}
+                  placeholder={t("contacts", "notePlaceholder")}
                   className="mt-2 h-11 w-full rounded-xl border border-[#303030] bg-[#202020] px-3 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-[#4b4b4b]"
                 />
               </div>
@@ -1192,7 +1187,7 @@ export default function ContactsPage() {
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--arivo-primary)] text-sm font-semibold text-black transition hover:bg-[var(--arivo-primary-hover)]"
               >
                 <Plus size={17} />
-                Save contact
+                {t("contacts", "saveContact")}
               </button>
 
             </form>
