@@ -2,13 +2,16 @@
 
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 export default function ArcCard() {
+  const { t } = useI18n();
+
   return (
     <div className="flex h-full flex-col justify-start rounded-[28px] border border-[#2b2b2b] bg-[#1a1a1a] p-7 lg:justify-between">
       <div>
         <p className="text-[15px] text-zinc-500">
-          Built on
+          {t("common", "builtOn")}
         </p>
 
         <div className="mt-5 flex items-center gap-4">
@@ -26,7 +29,7 @@ export default function ArcCard() {
             </p>
 
             <h2 className="mt-1 text-[30px] font-bold leading-none tracking-tight text-white">
-              Testnet
+              {t("common", "testnet")}
             </h2>
           </div>
         </div>
@@ -38,7 +41,7 @@ export default function ArcCard() {
         rel="noopener noreferrer"
         className="mt-2 flex items-center gap-2 text-sm font-medium text-zinc-400 transition hover:text-white lg:mt-0"
       >
-        Explore Arc
+        {t("common", "exploreArc")}
         <ArrowUpRight size={15} />
       </a>
     </div>

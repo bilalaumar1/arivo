@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const FALLBACK_RATE = 0.862;
 
 export default function FaucetCard() {
+  const { t } = useI18n();
+
   const [rate, setRate] = useState<number>(FALLBACK_RATE);
   const [loading, setLoading] = useState(true);
 
@@ -63,22 +66,22 @@ export default function FaucetCard() {
   const formattedRate = rate.toFixed(3);
 
   return (
-    <div className="h-full min-h-[180px] rounded-[28px] border border-[#2b2b2b] bg-[#1a1a1a] p-6 overflow-hidden">
+    <div className="h-full min-h-[180px] overflow-hidden rounded-[28px] border border-[#2b2b2b] bg-[#1a1a1a] p-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h3 className="text-xl font-semibold leading-tight text-white">
-            Exchange Rates
+            {t("common", "exchangeRates")}
           </h3>
 
           <p className="mt-0 text-sm text-zinc-500">
-            Live rate
+            {t("common", "liveRate")}
           </p>
         </div>
 
         {/* Flags */}
         <div className="flex shrink-0 items-center -space-x-2">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#1a1a1a] bg-[#202020] shadow-lg overflow-hidden">
+          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-[#1a1a1a] bg-[#202020] shadow-lg">
             <img
               src="/flags/us.png"
               alt="US"
@@ -86,7 +89,7 @@ export default function FaucetCard() {
             />
           </div>
 
-          <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#1a1a1a] bg-[#202020] shadow-lg overflow-hidden">
+          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-[#1a1a1a] bg-[#202020] shadow-lg">
             <img
               src="/flags/eu.png"
               alt="EU"
@@ -100,12 +103,12 @@ export default function FaucetCard() {
       <div className="mt-1 rounded-[22px] border border-[#303030] bg-[#181818] px-5 py-4">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-zinc-400">
-            USD / EUR
+            {t("common", "usdEur")}
           </span>
 
           <span className="flex shrink-0 items-center gap-2 text-sm font-medium text-green-400">
             <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-            Live
+            {t("common", "liveRate")}
           </span>
         </div>
 
@@ -119,8 +122,9 @@ export default function FaucetCard() {
             )}
           </div>
 
-          {/* Live rate badge — added only */}
-<div className="flex shrink-0 translate-x-2 items-center gap-1 rounded-[14px] border border-[#303030] bg-[#1b1b1b] px-1 py-2">            <svg
+          {/* Live rate badge */}
+          <div className="flex shrink-0 translate-x-2 items-center gap-1 rounded-[14px] border border-[#303030] bg-[#1b1b1b] px-1 py-2">
+            <svg
               width="18"
               height="18"
               viewBox="0 0 24 24"
@@ -144,7 +148,7 @@ export default function FaucetCard() {
             </svg>
 
             <span className="text-xs font-medium text-[#F3E8D0]">
-              Live rate
+              {t("common", "liveRate")}
             </span>
           </div>
         </div>

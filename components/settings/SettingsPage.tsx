@@ -20,8 +20,18 @@ import {
 import { supabase } from "@/lib/supabase";
 import { usePrivy } from "@privy-io/react-auth";
 import { useToast } from "@/components/toast/ToastProvider";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const PICTURES_BUCKET = "pictures";
+
+const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "fr", label: "Français" },
+  { code: "ar", label: "العربية" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "pt", label: "Português" },
+  { code: "es", label: "Español" },
+];
 
 function generateArivoId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -99,9 +109,59 @@ export default function SettingsPage() {
 
   const { user, logout } = usePrivy();
   const { success, error } = useToast();
+  const { t } = useI18n();
 
   const walletAddress =
     user?.wallet?.address ?? "";
+
+  const [language, setLanguage] = useState("en");
+
+  useEffect(() => {
+    try {
+      const savedLanguage =
+        window.localStorage.getItem("arivo:language");
+
+      if (
+        savedLanguage &&
+        LANGUAGES.some(
+          (item) => item.code === savedLanguage
+        )
+      ) {
+        setLanguage(savedLanguage);
+      }
+    } catch (storageError) {
+      console.error(
+        "FAILED TO LOAD LANGUAGE SETTING:",
+        storageError
+      );
+    }
+  }, []);
+
+  const handleLanguageChange = (
+    nextLanguage: string
+  ) => {
+    setLanguage(nextLanguage);
+
+    try {
+      window.localStorage.setItem(
+        "arivo:language",
+        nextLanguage
+      );
+
+      window.dispatchEvent(
+        new CustomEvent("arivo-language-changed", {
+          detail: {
+            language: nextLanguage,
+          },
+        })
+      );
+    } catch (storageError) {
+      console.error(
+        "FAILED TO SAVE LANGUAGE SETTING:",
+        storageError
+      );
+    }
+  };
 
   const [transactionNotifications, setTransactionNotifications] =
     useState(true);
@@ -326,7 +386,7 @@ export default function SettingsPage() {
 
     if (!walletAddress) {
       setSaveMessage(
-        "Connect your Arivo wallet first."
+        t("settings", "connectWalletFirst")
       );
 
       event.target.value = "";
@@ -338,7 +398,7 @@ export default function SettingsPage() {
       !file.type.startsWith("image/")
     ) {
       setSaveMessage(
-        "Please select a valid image."
+        t("settings", "invalidImage")
       );
 
       event.target.value = "";
@@ -350,7 +410,7 @@ export default function SettingsPage() {
       file.size > 5 * 1024 * 1024
     ) {
       setSaveMessage(
-        "Image must be smaller than 5MB."
+        t("settings", "imageTooLarge")
       );
 
       event.target.value = "";
@@ -415,7 +475,7 @@ export default function SettingsPage() {
 
       if (!publicUrl) {
         throw new Error(
-          "Unable to create public picture URL."
+          t("settings", "publicPictureUrlError")
         );
       }
 
@@ -488,7 +548,7 @@ export default function SettingsPage() {
           .insert({
             username:
               name.trim() ||
-              "Arivo User",
+              t("settings", "arivoUser"),
             avatar: finalUrl,
             wallet:
               walletAddress,
@@ -534,10 +594,10 @@ export default function SettingsPage() {
       );
 
       error(
-        "Picture upload failed",
+        t("settings", "pictureUploadFailed"),
         err instanceof Error
           ? err.message
-          : "Unable to upload picture."
+          : t("settings", "unableToUploadPicture")
       );
     } finally {
       setUploading(false);
@@ -564,7 +624,7 @@ export default function SettingsPage() {
 
       if (!cleanName) {
         setSaveMessage(
-          "Please enter a display name."
+          t("settings", "enterDisplayName")
         );
 
         return;
@@ -737,10 +797,10 @@ export default function SettingsPage() {
         );
 
         error(
-          "Profile update failed",
+          t("settings", "profileUpdateFailed"),
           err instanceof Error
             ? err.message
-            : "Unable to save profile."
+            : t("settings", "unableToSaveProfile")
         );
       } finally {
         setSaving(false);
@@ -790,7 +850,7 @@ export default function SettingsPage() {
           {avatar ? (
             <img
               src={avatar}
-              alt="Profile avatar"
+              alt={t("settings", "profileAvatarAlt")}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -823,7 +883,7 @@ export default function SettingsPage() {
                 window.history.back()
               }
               className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#343434] bg-[#1b1b1b] text-zinc-300 transition hover:bg-[#242424]"
-              aria-label="Go back"
+              aria-label={t("common", "back")}
             >
               <ArrowLeft
                 size={21}
@@ -1073,13 +1133,13 @@ export default function SettingsPage() {
 
             <div>
               <p className="text-[15px] font-medium text-zinc-300">
-                {disconnecting ? "Disconnecting..." : "Disconnect"}
+                {disconnecting ? t("settings", "disconnecting") : t("settings", "disconnect")}
               </p>
 
               <p className="mt-0.5 text-[12px] text-zinc-500">
                 {disconnecting
-                  ? "Disconnecting your wallet"
-                  : "Disconnect your wallet"}
+                  ? t("settings", "disconnectingWallet")
+                  : t("settings", "disconnectWallet")}
               </p>
             </div>
           </button>
@@ -1117,7 +1177,7 @@ export default function SettingsPage() {
                     <div className="min-w-0">
                       <h3 className="text-[17px] font-semibold text-zinc-100">
                         {name ||
-                          "Arivo User"}
+                          t("settings", "arivoUser")}
                       </h3>
 
                       <p className="mt-1 text-[13px] text-zinc-500">
@@ -1155,8 +1215,8 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Arivo ID"
-                  description="Your unique identity on Arivo"
+                  title={t("settings", "arivoId")}
+                  description={t("settings", "uniqueIdentity")}
                   right={
                     <span className="flex h-10 w-[130px] lg:h-12 lg:w-[180px] items-center justify-center rounded-xl border border-[#373737] bg-[#1d1d1d] px-3 text-[12px] font-medium lg:px-4 lg:text-[14px] text-zinc-200">
                       {arivoId ||
@@ -1173,8 +1233,8 @@ export default function SettingsPage() {
                         size={21}
                       />
                     }
-                    title="Wallet address"
-                    description="Your connected wallet"
+                    title={t("settings", "walletAddress")}
+                    description={t("settings", "connectedWallet")}
                     right={
                       <button
                         type="button"
@@ -1187,7 +1247,7 @@ export default function SettingsPage() {
                           {shortenAddress(
                             walletAddress
                           ) ||
-                            "Not connected"}
+                            t("settings", "notConnected")}
                         </span>
 
                         {copied ? (
@@ -1218,8 +1278,8 @@ export default function SettingsPage() {
                         size={21}
                       />
                     }
-                    title="Network"
-                    description="Current blockchain network"
+                    title={t("settings", "network")}
+                    description={t("settings", "currentBlockchainNetwork")}
                     right={
                       <div className="flex h-10 w-[130px] lg:h-12 lg:w-[180px] items-center justify-center gap-2 rounded-xl border border-[#373737] bg-[#1d1d1d] text-[14px] text-zinc-200">
                         <span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />
@@ -1271,8 +1331,8 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Wallet security"
-                  description="Your wallet is connected and protected"
+                  title={t("settings", "walletSecurity")}
+                  description={t("settings", "walletProtected")}
                   right={
                     <div className="flex items-center gap-2 text-[14px] text-[#22c55e]">
                       <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
@@ -1289,8 +1349,8 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Network verification"
-                  description="Transactions are verified on Arc Testnet"
+                  title={t("settings", "networkVerification")}
+                  description={t("settings", "transactionsVerified")}
                   right={
                     <span className="text-[13px] text-zinc-500">
                       Active
@@ -1326,8 +1386,8 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Transaction notifications"
-                  description="Get notified about wallet activity"
+                  title={t("settings", "transactionNotifications")}
+                  description={t("settings", "walletActivityNotifications")}
                   right={
                     <button
                       type="button"
@@ -1366,8 +1426,8 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Payment notifications"
-                  description="Receive updates about incoming payments"
+                  title={t("settings", "paymentNotifications")}
+                  description={t("settings", "incomingPaymentNotifications")}
                   right={
                     <button
                       type="button"
@@ -1426,8 +1486,8 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Default asset"
-                  description="Asset used by default across Arivo"
+                  title={t("settings", "defaultAsset")}
+                  description={t("settings", "defaultAssetDescription")}
                   right={
                     <span className="text-[14px] font-medium text-zinc-200">
                       USDC
@@ -1443,12 +1503,46 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Default network"
-                  description="Network used for transactions"
+                  title={t("settings", "defaultNetwork")}
+                  description={t("settings", "defaultNetworkDescription")}
                   right={
                     <span className="text-[14px] font-medium text-zinc-200">
                       Arc Testnet
                     </span>
+                  }
+                />
+
+                <div className="border-t border-[#2b2b2b]" />
+
+                <SettingsRow
+                  icon={
+                    <Globe
+                      size={21}
+                    />
+                  }
+                  title={t("settings", "language")}
+                  description={t("settings", "languageDescription")}
+                  right={
+                    <select
+                      value={language}
+                      onChange={(e) =>
+                        handleLanguageChange(
+                          e.target.value
+                        )
+                      }
+                      aria-label={t("settings", "language")}
+                      className="h-10 max-w-[150px] cursor-pointer rounded-xl border border-[#373737] bg-[#1d1d1d] px-3 text-[13px] font-medium text-zinc-200 outline-none transition hover:bg-[#252525] focus:border-[#555555] lg:h-12 lg:w-[180px] lg:max-w-none lg:px-4 lg:text-[14px]"
+                    >
+                      {LANGUAGES.map((item) => (
+                        <option
+                          key={item.code}
+                          value={item.code}
+                          className="bg-[#1d1d1d] text-white"
+                        >
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
                   }
                 />
 
@@ -1480,14 +1574,14 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Wallet address"
-                  description="Connected wallet"
+                  title={t("settings", "walletAddress")}
+                  description={t("settings", "connectedWalletShort")}
                   right={
                     <span className="text-[12px] text-zinc-300 lg:text-[14px]">
                       {shortenAddress(
                         walletAddress
                       ) ||
-                        "Not connected"}
+                        t("settings", "notConnected")}
                     </span>
                   }
                 />
@@ -1500,8 +1594,8 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Network"
-                  description="Connected blockchain network"
+                  title={t("settings", "network")}
+                  description={t("settings", "connectedBlockchainNetwork")}
                   right={
                     <div className="flex items-center gap-2 text-[14px]">
                       <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
@@ -1521,8 +1615,8 @@ export default function SettingsPage() {
                       size={21}
                     />
                   }
-                  title="Chain ID"
-                  description="Current network chain identifier"
+                  title={t("settings", "chainId")}
+                  description={t("settings", "chainIdDescription")}
                   right={
                     <span className="text-[12px] text-zinc-300 lg:text-[14px]">
                       5042002
@@ -1615,8 +1709,8 @@ export default function SettingsPage() {
                     className="mt-3 rounded-lg border border-[#383838] bg-[#202020] px-3.5 py-2 text-[13px] font-medium text-zinc-200 transition hover:bg-[#292929] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {uploading
-                      ? "Uploading..."
-                      : "Upload picture"}
+                      ? t("settings", "uploading")
+                      : t("settings", "uploadPicture")}
                   </button>
 
                 </div>
@@ -1638,7 +1732,7 @@ export default function SettingsPage() {
                     )
                   }
                   className="w-full rounded-xl border border-[#383838] bg-[#202020] px-4 py-3 text-[14px] text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-[#555555]"
-                  placeholder="Enter your name"
+                  placeholder={t("settings", "enterName")}
                 />
 
               </div>
@@ -1647,9 +1741,7 @@ export default function SettingsPage() {
               {saveMessage && (
                 <div
                   className={`mt-4 rounded-xl border px-4 py-3 text-[12px] ${
-                    saveMessage.includes(
-                      "successfully"
-                    )
+                    saveMessage.includes(t("settings", "successfully"))
                       ? "border-green-500/20 bg-green-500/5 text-green-400"
                       : "border-red-500/20 bg-red-500/5 text-red-400"
                   }`}
@@ -1689,8 +1781,8 @@ export default function SettingsPage() {
                   className="rounded-xl bg-[#f1e8d5] px-5 py-2.5 text-[14px] font-semibold text-[#111111] transition hover:bg-[#e7ddc8] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving
-                    ? "Saving..."
-                    : "Save changes"}
+                    ? t("settings", "saving")
+                    : t("settings", "saveChanges")}
                 </button>
 
               </div>

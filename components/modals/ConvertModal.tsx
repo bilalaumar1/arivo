@@ -14,6 +14,7 @@ import {
 } from "viem";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useToast } from "@/components/toast/ToastProvider";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const ARC_TESTNET_CHAIN_ID = 5042002;
 
@@ -108,6 +109,15 @@ export default function ConvertModal({
   const { user } = usePrivy();
   const { wallets } = useWallets();
   const { success: toastSuccess, error: toastError } = useToast();
+  const { t } = useI18n();
+
+  function translate(template: string, values: Record<string, string>) {
+    return Object.entries(values).reduce(
+      (text, [key, value]) =>
+        text.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value),
+      template
+    );
+  }
 
   const [fromCurrency, setFromCurrency] =
     useState<Currency>("USDC");
@@ -198,13 +208,13 @@ export default function ConvertModal({
   async function getQuote() {
     if (!user?.wallet?.address) {
       throw new Error(
-        "Please connect your wallet first."
+        t("common", "pleaseConnectWallet")
       );
     }
 
     if (fromCurrency === toCurrency) {
       throw new Error(
-        "You cannot convert the same asset."
+        t("common", "cannotConvertSameAsset")
       );
     }
 
@@ -216,7 +226,7 @@ export default function ConvertModal({
       numericAmount <= 0
     ) {
       throw new Error(
-        "Enter a valid amount."
+        t("common", "enterValidAmount")
       );
     }
 
@@ -272,7 +282,7 @@ export default function ConvertModal({
       throw new Error(
         data?.message ||
           data?.error ||
-          "No swap route was found."
+          t("common", "noSwapRouteFound")
       );
     }
 
@@ -281,7 +291,7 @@ export default function ConvertModal({
       !data?.transactionRequest
     ) {
       throw new Error(
-        "Invalid swap quote received."
+        t("common", "invalidSwapQuote")
       );
     }
 
@@ -319,7 +329,7 @@ export default function ConvertModal({
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to get a quote."
+          : t("common", "unableToGetQuote")
       );
     } finally {
       setLoading(false);
@@ -329,14 +339,14 @@ export default function ConvertModal({
   async function handleConfirm() {
     if (!quote) {
       setError(
-        "Quote is missing. Please request a new quote."
+        t("common", "quoteMissing")
       );
       return;
     }
 
     if (!user?.wallet?.address) {
       setError(
-        "Please connect your wallet first."
+        t("common", "pleaseConnectWallet")
       );
       return;
     }
@@ -354,7 +364,7 @@ export default function ConvertModal({
 
       if (!wallet) {
         throw new Error(
-          "No connected wallet found. Please connect your wallet first."
+          t("common", "noConnectedWallet")
         );
       }
 
@@ -363,7 +373,7 @@ export default function ConvertModal({
 
       if (!provider) {
         throw new Error(
-          "Privy wallet provider not available."
+          t("common", "privyProviderUnavailable")
         );
       }
 
@@ -411,7 +421,7 @@ export default function ConvertModal({
         balance < requiredAmount
       ) {
         throw new Error(
-          `Insufficient ${fromCurrency} balance. You need ${amount} ${fromCurrency}.`
+          translate(t("common", "insufficientConvertBalance"), { currency: fromCurrency, amount })
         );
       }
 
@@ -421,7 +431,7 @@ export default function ConvertModal({
 
       if (!approvalAddress) {
         throw new Error(
-          "Swap approval address was not provided."
+          t("common", "swapApprovalMissing")
         );
       }
 
@@ -500,15 +510,15 @@ export default function ConvertModal({
         "success"
       ) {
         throw new Error(
-          "Swap transaction reverted."
+          t("common", "swapTransactionReverted")
         );
       }
 
       setTxHash(hash);
 
       toastSuccess(
-        "Conversion successful",
-        `${amount} ${fromCurrency} converted to ${receiveAmount} ${toCurrency}.`
+        t("common", "conversionSuccessful"),
+        translate(t("common", "conversionSuccessfulMessage"), { amount, from: fromCurrency, receive: receiveAmount, to: toCurrency })
       );
 
       window.dispatchEvent(
@@ -533,10 +543,10 @@ export default function ConvertModal({
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "Conversion failed.";
+          : t("common", "conversionFailed");
 
       setError(errorMessage);
-      toastError("Conversion failed", errorMessage);
+      toastError(t("common", "conversionFailed"), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -555,7 +565,7 @@ export default function ConvertModal({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white">
-                  Convert
+                  {t("common", "convert")}
                 </h2>
 
                 <p className="mt-2 text-sm text-zinc-500">
@@ -575,7 +585,7 @@ export default function ConvertModal({
 
             <div className="mt-8">
               <label className="mb-2 block text-sm text-zinc-400">
-                From
+                {t("common", "from")}
               </label>
 
               <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-4">
@@ -583,7 +593,7 @@ export default function ConvertModal({
 
                   <div>
                     <p className="text-xs text-zinc-500">
-                      Asset
+                      {t("common", "asset")}
                     </p>
 
                     <div className="mt-1 flex items-center gap-2">
@@ -611,7 +621,7 @@ export default function ConvertModal({
 
                   <div className="text-right">
                     <p className="text-xs text-zinc-500">
-                      You send
+                      {t("common", "youSend")}
                     </p>
 
                     <p className="mt-1 text-lg font-semibold text-white">
@@ -643,7 +653,7 @@ export default function ConvertModal({
 
             <div className="mt-5">
               <label className="mb-2 block text-sm text-zinc-400">
-                To
+                {t("common", "to")}
               </label>
 
               <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-4">
@@ -651,7 +661,7 @@ export default function ConvertModal({
 
                   <div>
                     <p className="text-xs text-zinc-500">
-                      Asset
+                      {t("common", "asset")}
                     </p>
 
                     <div className="mt-1 flex items-center gap-2">
@@ -679,7 +689,7 @@ export default function ConvertModal({
 
                   <div className="text-right">
                     <p className="text-xs text-zinc-500">
-                      You receive
+                      {t("common", "youReceive")}
                     </p>
 
                     <p className="mt-1 text-lg font-semibold text-white">
@@ -695,7 +705,7 @@ export default function ConvertModal({
 
             <div className="mt-6">
               <label className="mb-2 block text-sm text-zinc-400">
-                Amount
+                {t("common", "amount")}
               </label>
 
               <div className="relative">
@@ -733,7 +743,7 @@ export default function ConvertModal({
               <div className="flex items-center justify-between">
 
                 <span className="text-sm text-zinc-500">
-                  Preview rate
+                  {t("common", "previewRate")}
                 </span>
 
                 <span className="text-sm font-medium text-white">
@@ -741,7 +751,7 @@ export default function ConvertModal({
                     ? `1 ${fromCurrency} ≈ ${previewRate.toFixed(
                         6
                       )} ${toCurrency}`
-                    : "Enter amount"}
+                    : t("common", "enterAmount")}
                 </span>
 
               </div>
@@ -763,7 +773,7 @@ export default function ConvertModal({
                 onClick={handleClose}
                 className="h-12 flex-1 rounded-xl border border-[#2b2b2b] text-white hover:bg-[#202020]"
               >
-                Cancel
+                {t("common", "cancel")}
               </button>
 
               <button
@@ -776,8 +786,8 @@ export default function ConvertModal({
                 className="h-12 flex-1 rounded-xl bg-[#efe5d2] font-semibold text-black hover:opacity-90 disabled:opacity-40"
               >
                 {loading
-                  ? "Getting Quote..."
-                  : "Review Conversion"}
+                  ? t("common", "gettingQuote")
+                  : t("common", "reviewConversion")}
               </button>
 
             </div>
@@ -794,11 +804,11 @@ export default function ConvertModal({
 
               <div>
                 <h2 className="text-2xl font-bold text-white">
-                  Review Conversion
+                  {t("common", "reviewConversion")}
                 </h2>
 
                 <p className="mt-2 text-sm text-zinc-500">
-                  Check the quote before continuing.
+                  {t("common", "checkQuoteBeforeContinuing")}
                 </p>
               </div>
 
@@ -818,7 +828,7 @@ export default function ConvertModal({
 
                 <div>
                   <p className="text-xs text-zinc-500">
-                    You pay
+                    {t("common", "youPay")}
                   </p>
 
                   <p className="mt-1 text-2xl font-semibold text-white">
@@ -893,7 +903,7 @@ export default function ConvertModal({
 
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-500">
-                  Rate
+                  {t("common", "rate")}
                 </span>
 
                 <span className="text-sm text-white">
@@ -907,7 +917,7 @@ export default function ConvertModal({
 
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-500">
-                  Network
+                  {t("common", "network")}
                 </span>
 
                 <span className="text-sm text-white">
@@ -917,12 +927,12 @@ export default function ConvertModal({
 
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-500">
-                  Route
+                  {t("common", "route")}
                 </span>
 
                 <span className="text-sm text-white">
                   {quote?.tool ||
-                    "Swap"}
+                    t("common", "swap")}
                 </span>
               </div>
 
@@ -946,7 +956,7 @@ export default function ConvertModal({
                 <ArrowLeft
                   size={17}
                 />
-                Back
+                {t("common", "back")}
               </button>
 
               <button
@@ -957,8 +967,8 @@ export default function ConvertModal({
                 className="h-12 flex-1 rounded-xl bg-[#efe5d2] font-semibold text-black hover:opacity-90 disabled:opacity-50"
               >
                 {loading
-                  ? "Processing..."
-                  : "Confirm Conversion"}
+                  ? t("common", "processing")
+                  : t("common", "confirmConversion")}
               </button>
 
             </div>
@@ -974,7 +984,7 @@ export default function ConvertModal({
             <div className="flex items-center justify-between">
 
               <h2 className="text-2xl font-bold text-white">
-                Conversion Complete
+                {t("common", "conversionComplete")}
               </h2>
 
               <button
@@ -1009,12 +1019,12 @@ export default function ConvertModal({
                   rel="noopener noreferrer"
                   className="mt-5 text-sm text-[#efe5d2] underline underline-offset-4 hover:text-white"
                 >
-                  View transaction on Arcscan
+                  {t("common", "viewTransactionArcscan")}
                 </a>
               )}
 
               <p className="mt-5 text-sm text-zinc-500">
-                Conversion confirmed on Arc Testnet.
+                {t("common", "conversionConfirmedArc")}
               </p>
 
             </div>
@@ -1023,7 +1033,7 @@ export default function ConvertModal({
               onClick={handleClose}
               className="mt-8 h-12 w-full rounded-xl bg-[#efe5d2] font-semibold text-black hover:opacity-90"
             >
-              Done
+              {t("common", "done")}
             </button>
 
           </>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useI18n } from "@/lib/i18n/useI18n";
 import { useToast } from "@/components/toast/ToastProvider";
 import type { LucideIcon } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
@@ -186,7 +188,10 @@ function AssetLogo({ asset }: { asset: PaymentAsset }) {
 }
 
 export default function MerchantPage() {
+  const { user } = usePrivy();
+  const { wallets } = useWallets();
   const { success, error: toastError } = useToast();
+  const { t } = useI18n();
 
   const [selectedService, setSelectedService] =
     useState<ServiceId | null>(null);
@@ -240,6 +245,47 @@ export default function MerchantPage() {
   );
 
   const countryConfig = countries[country];
+  const serviceTitle = (id: ServiceId) =>
+    ({
+      electricity: t("merchant", "electricity"),
+      water: t("merchant", "water"),
+      internet: t("merchant", "internet"),
+      mobile: t("merchant", "mobileRecharge"),
+      giftcards: t("merchant", "giftCards"),
+    })[id];
+
+  const serviceDescription = (id: ServiceId) =>
+    ({
+      electricity: t("merchant", "electricityDescription"),
+      water: t("merchant", "waterDescription"),
+      internet: t("merchant", "internetDescription"),
+      mobile: t("merchant", "mobileDescription"),
+      giftcards: t("merchant", "giftCardsDescription"),
+    })[id];
+
+  const serviceGroup = (group: string) =>
+    ({
+      Bills: t("merchant", "bills"),
+      Recharge: t("merchant", "recharge"),
+      Digital: t("merchant", "digital"),
+    }[group] ?? group);
+
+  const countryName = (id: CountryId) =>
+    ({
+      dz: t("merchant", "algeria"),
+      us: t("merchant", "unitedStates"),
+      fr: t("merchant", "france"),
+      gb: t("merchant", "unitedKingdom"),
+      ae: t("merchant", "unitedArabEmirates"),
+    })[id];
+
+  const internetPlanLabel = (id: (typeof internetPlans)[number]["id"]) =>
+    ({
+      "1m": t("merchant", "oneMonth"),
+      "3m": t("merchant", "threeMonths"),
+      "1y": t("merchant", "oneYear"),
+    })[id];
+
 
   const selectedInternetPlan =
     internetPlans.find((plan) => plan.id === internetPlan) ??
@@ -338,12 +384,12 @@ export default function MerchantPage() {
         );
 
         if (!response.ok) {
-          throw new Error("Unable to load current exchange rates.");
+          throw new Error(t("merchant", "unableToLoadRates"));
         }
 
         const data = await response.json();
         if (!data?.rates || typeof data.rates !== "object") {
-          throw new Error("Exchange-rate data is unavailable.");
+          throw new Error(t("merchant", "rateDataUnavailable"));
         }
 
         setFxRates(data.rates as Record<string, number>);
@@ -354,7 +400,7 @@ export default function MerchantPage() {
 
         console.error("FX rate lookup failed:", error);
         setFxRates(null);
-        setFxError("Current rate unavailable");
+        setFxError(t("merchant", "currentRateUnavailable"));
       } finally {
         if (!controller.signal.aborted) {
           setFxLoading(false);
@@ -461,14 +507,14 @@ export default function MerchantPage() {
 
     if (!paymentReceiver) {
       const message =
-        "Payment setup is not configured yet. Add the Arivo payment wallet before sending real funds.";
+        t("merchant", "paymentSetupError");
       setPaymentError(message);
       toastError("Payment setup required", message);
       return;
     }
 
     if (!/^0x[a-fA-F0-9]{40}$/.test(paymentReceiver)) {
-      const message = "Configured payment wallet address is invalid.";
+      const message = t("merchant", "invalidReceiver");
       setPaymentError(message);
       toastError("Payment failed", message);
       return;
@@ -476,16 +522,16 @@ export default function MerchantPage() {
 
     if (!paymentEquivalents) {
       const message =
-        "The current payment quote is unavailable. Please wait for the rate and try again.";
+        t("merchant", "quoteUnavailable");
       setPaymentError(message);
-      toastError("Payment quote unavailable", message);
+      toastError(t("merchant", "quoteUnavailableTitle"), message);
       return;
     }
 
     const amount = paymentEquivalents[paymentAsset];
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      const message = "Invalid payment amount.";
+      const message = t("merchant", "invalidPaymentAmount");
       setPaymentError(message);
       toastError("Payment failed", message);
       return;
@@ -500,10 +546,38 @@ export default function MerchantPage() {
       const receiver =
         paymentReceiver as `0x${string}`;
 
+      // Use the wallet managed by Privy for email / Google users instead of
+      // falling back to window.ethereum (MetaMask). This keeps Merchant
+      // payments on the same Arivo wallet shown in the dashboard.
+      const activeWallet = wallets.find(
+        (wallet) =>
+          wallet.address.toLowerCase() ===
+          user?.wallet?.address?.toLowerCase()
+      );
+
+      if (!activeWallet) {
+        throw new Error(
+          t("merchant", "walletNotFound")
+        );
+      }
+
+      const transactionProvider =
+        (await activeWallet.getEthereumProvider()) as unknown as Parameters<
+          typeof sendUSDC
+        >[2];
+
       if (paymentAsset === "USDC") {
-        hash = await sendUSDC(receiver, amountForToken);
+        hash = await sendUSDC(
+          receiver,
+          amountForToken,
+          transactionProvider
+        );
       } else {
-        hash = await sendEURC(receiver, amountForToken);
+        hash = await sendEURC(
+          receiver,
+          amountForToken,
+          transactionProvider
+        );
       }
 
       setTxHash(hash);
@@ -539,6 +613,7 @@ export default function MerchantPage() {
             ? `${giftBrand} Gift Card`
             : current.title,
         email,
+        ownerWalletAddress: user?.wallet?.address?.toLowerCase() ?? "",
         country:
           selectedService === "electricity" ||
           selectedService === "water" ||
@@ -625,7 +700,7 @@ export default function MerchantPage() {
         if (!emailResponse.ok) {
           throw new Error(
             emailResult?.error ||
-              "The payment was confirmed, but the email could not be sent."
+              t("merchant", "emailNotSentError")
           );
         }
 
@@ -641,7 +716,7 @@ export default function MerchantPage() {
         setEmailError(
           emailError instanceof Error
             ? emailError.message
-            : "Payment confirmed, but email delivery failed."
+            : t("merchant", "emailDeliveryFailed")
         );
       }
 
@@ -668,7 +743,7 @@ export default function MerchantPage() {
       const message =
         error instanceof Error
           ? error.message
-          : "Payment failed. Please try again.";
+          : t("merchant", "paymentFailed");
 
       setPaymentError(message);
       toastError("Payment failed", message);
@@ -718,7 +793,7 @@ export default function MerchantPage() {
               type="button"
               onClick={() => window.history.back()}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
-              aria-label="Go back"
+              aria-label={t("common", "back")}
             >
               <ArrowLeft size={19} />
             </button>
@@ -728,8 +803,7 @@ export default function MerchantPage() {
                 Arivo Pay
               </h1>
               <p className="mt-1 text-[13px] text-zinc-500">
-                Bills, recharge and digital purchases  paid from your
-                Account.
+                {t("merchant", "headerSubtitle")}
               </p>
             </div>
           </div>
@@ -752,12 +826,12 @@ export default function MerchantPage() {
                   <h2 className="mt-4 max-w-[540px] text-[34px] font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-[42px] lg:text-[46px]">
                     Everyday services,
                     <br />
-                    <span className="text-[#b9cbed]">simplified.</span>
+                    <span className="text-[#b9cbed]">{t("merchant", "simplified")}</span>
                   </h2>
                   <p className="mt-4 max-w-[430px] text-[13px] leading-5 text-[#9aa6b5] sm:text-[14px]">
-                    Pay bills, recharge and digital services directly
+                    {t("merchant", "heroLine1")}
                     <br className="hidden sm:block" />
-                    with Arivo Pay.
+                    {t("merchant", "heroLine2")}
                   </p>
                 </div>
 
@@ -778,8 +852,8 @@ export default function MerchantPage() {
               <div className="flex h-[54px] items-center rounded-2xl border border-[#2d3033] bg-[#17191a] px-4 transition focus-within:border-[#55595d]">
                 <input
                   type="text"
-                  aria-label="Search services"
-                  placeholder="Search for a service (electricity, internet, mobile, ...)"
+                  aria-label={t("merchant", "searchServices")}
+                  placeholder={t("merchant", "searchPlaceholder")}
                   className="h-full min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-zinc-600"
                 />
                 <button
@@ -794,8 +868,8 @@ export default function MerchantPage() {
             <section className="mt-8">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <h3 className="text-[19px] font-semibold tracking-[-0.02em]">Popular</h3>
-                  <p className="mt-1 text-[12px] text-zinc-500">Most used services in your region.</p>
+                  <h3 className="text-[19px] font-semibold tracking-[-0.02em]">{t("merchant", "popular")}</h3>
+                  <p className="mt-1 text-[12px] text-zinc-500">{t("merchant", "popularDescription")}</p>
                 </div>
                 <button
                   type="button"
@@ -822,7 +896,7 @@ export default function MerchantPage() {
                   >
                     <div className="absolute -bottom-20 -right-12 h-40 w-40 rounded-full border border-white/[0.05] transition duration-300 group-hover:scale-110" />
                     <div className="relative">
-                      <p className="text-[15px] font-semibold">{service.title}</p>
+                      <p className="text-[15px] font-semibold">{serviceTitle(service.id)}</p>
                       <p className="mt-2 text-[12px] text-zinc-500">
                         {index === 0 ? "Pay your bill" : index === 1 ? "Stay connected" : "Top up your balance"}
                       </p>
@@ -834,8 +908,8 @@ export default function MerchantPage() {
 
             <section id="all-services" className="mt-9 scroll-mt-6">
               <div>
-                <h3 className="text-[19px] font-semibold tracking-[-0.02em]">All services</h3>
-                <p className="mt-1 text-[12px] text-zinc-500">Browse by category and find what you need.</p>
+                <h3 className="text-[19px] font-semibold tracking-[-0.02em]">{t("merchant", "allServices")}</h3>
+                <p className="mt-1 text-[12px] text-zinc-500">{t("merchant", "allServicesDescription")}</p>
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -846,11 +920,11 @@ export default function MerchantPage() {
                 >
                   <div className="absolute -right-16 -top-16 h-52 w-52 rotate-45 border border-white/[0.05]" />
                   <div className="relative">
-                    <p className="text-[17px] font-semibold">Bills</p>
+                    <p className="text-[17px] font-semibold">{t("merchant", "bills")}</p>
                     <div className="mt-5 space-y-1.5 text-[12px] text-zinc-500">
-                      <p>Electricity</p>
-                      <p>Water</p>
-                      <p>Internet</p>
+                      <p>{t("merchant", "electricity")}</p>
+                      <p>{t("merchant", "water")}</p>
+                      <p>{t("merchant", "internet")}</p>
                     </div>
                   </div>
                 </button>
@@ -862,11 +936,11 @@ export default function MerchantPage() {
                 >
                   <div className="absolute -right-16 top-10 h-56 w-20 rotate-[-38deg] border border-[#a58a5c]/10 bg-[#8c7040]/10" />
                   <div className="relative">
-                    <p className="text-[17px] font-semibold">Mobile</p>
+                    <p className="text-[17px] font-semibold">{t("merchant", "mobile")}</p>
                     <div className="mt-4 space-y-1.5 text-[12px] text-zinc-500">
-                      <p>Recharge</p>
-                      <p>Data bundles</p>
-                      <p>Voice plans</p>
+                      <p>{t("merchant", "recharge")}</p>
+                      <p>{t("merchant", "dataBundles")}</p>
+                      <p>{t("merchant", "voicePlans")}</p>
                     </div>
                   </div>
                 </button>
@@ -878,12 +952,12 @@ export default function MerchantPage() {
                 >
                   <div className="absolute -right-20 -top-20 h-56 w-56 border border-[#8c65b8]/10 bg-[#6f4a91]/10" />
                   <div className="relative">
-                    <p className="text-[17px] font-semibold">Digital</p>
+                    <p className="text-[17px] font-semibold">{t("merchant", "digital")}</p>
                     <div className="mt-4 space-y-1.5 text-[12px] text-zinc-500">
-                      <p>Gift cards</p>
-                      <p>Gaming</p>
-                      <p>Subscriptions</p>
-                      <p>eSIM</p>
+                      <p>{t("merchant", "giftCards")}</p>
+                      <p>{t("merchant", "gaming")}</p>
+                      <p>{t("merchant", "subscriptions")}</p>
+                      <p>{t("merchant", "esim")}</p>
                     </div>
                   </div>
                 </button>
@@ -891,7 +965,7 @@ export default function MerchantPage() {
                 <div className="relative min-h-[150px] overflow-hidden rounded-[22px] border border-[#30343a] bg-[linear-gradient(135deg,#1a2027,#151719)] p-5 md:col-span-2">
                   <div className="absolute -bottom-24 left-1/3 h-48 w-[70%] rounded-full border border-white/[0.04]" />
                   <div className="relative max-w-[460px]">
-                    <p className="text-[17px] font-semibold">Coming soon</p>
+                    <p className="text-[17px] font-semibold">{t("merchant", "comingSoon")}</p>
                     <p className="mt-3 text-[12px] leading-5 text-zinc-500">
                       More everyday services are coming soon to Arivo Pay.
                     </p>
@@ -902,10 +976,10 @@ export default function MerchantPage() {
 <section className="mt-8 rounded-[22px] border border-[#292c2f] bg-[#141617] p-5 sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">ARIVO PAY</p>
-                  <h3 className="mt-2 text-[16px] font-semibold">Payment &amp; orders</h3>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">{t("merchant", "arivoPayUpper")}</p>
+                  <h3 className="mt-2 text-[16px] font-semibold">{t("merchant", "paymentAndOrders")}</h3>
                   <p className="mt-1 max-w-[620px] text-[12px] leading-5 text-zinc-500">
-                    Track service orders from blockchain confirmation through provider fulfillment, or review your wallet transaction history.
+                    {t("merchant", "paymentAndOrdersDescription")}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
@@ -936,10 +1010,10 @@ export default function MerchantPage() {
             <div className="flex shrink-0 items-center justify-between border-b border-[#2a2a2a] px-6 py-5 lg:px-7">
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-600">
-                  {current.group}
+                  {serviceGroup(current.group)}
                 </p>
                 <h2 className="mt-1 text-[20px] font-semibold">
-                  {current.title}
+                  {serviceTitle(current.id)}
                 </h2>
               </div>
 
@@ -979,7 +1053,7 @@ export default function MerchantPage() {
                                 : "border-[#303030] bg-[#1c1c1c] text-zinc-400 hover:border-[#484848] hover:text-white"
                             }`}
                           >
-                            {bill.title}
+                            {serviceTitle(bill.id)}
                           </button>
                         );
                       }
@@ -1027,7 +1101,7 @@ export default function MerchantPage() {
                             {Object.entries(countries).map(
                               ([id, config]) => (
                                 <option key={id} value={id}>
-                                  {config.name} · {config.currency}
+                                  {countryName(id as CountryId)} · {config.currency}
                                 </option>
                               )
                             )}
@@ -1121,7 +1195,7 @@ export default function MerchantPage() {
                                 setEmail(e.target.value)
                               }
                               type="email"
-                              placeholder="you@example.com"
+                              placeholder={t("merchant", "emailPlaceholder")}
                               className={inputClass}
                             />
                           </div>
@@ -1140,7 +1214,7 @@ export default function MerchantPage() {
                               onChange={(e) =>
                                 setIdentifier(e.target.value)
                               }
-                              placeholder="Enter account or line number"
+                              placeholder={t("merchant", "accountLinePlaceholder")}
                               className={inputClass}
                             />
                           </div>
@@ -1166,7 +1240,7 @@ export default function MerchantPage() {
                                 >
                                   <div>
     <p className="text-[13px] font-semibold">
-                                      {plan.label}
+                                      {internetPlanLabel(plan.id)}
                                     </p>
                                     <p
                                       className={`mt-1 text-[10px] ${
@@ -1198,7 +1272,7 @@ export default function MerchantPage() {
                                 setEmail(e.target.value)
                               }
                               type="email"
-                              placeholder="you@example.com"
+                              placeholder={t("merchant", "emailPlaceholder")}
                               className={inputClass}
                             />
                           </div>
@@ -1217,7 +1291,7 @@ export default function MerchantPage() {
                               onChange={(e) =>
                                 setIdentifier(e.target.value)
                               }
-                              placeholder="Enter mobile number"
+                              placeholder={t("merchant", "mobilePlaceholder")}
                               className={inputClass}
                             />
                           </div>
@@ -1359,7 +1433,7 @@ export default function MerchantPage() {
                                   setEmail(e.target.value)
                                 }
                                 type="email"
-                                placeholder="you@example.com"
+                                placeholder={t("merchant", "emailPlaceholder")}
                                 className={`${inputClass} pl-11`}
                               />
                             </div>
@@ -1485,7 +1559,7 @@ export default function MerchantPage() {
                             Service
                           </span>
                           <span className="text-[11px] font-medium text-white">
-                            {current.title}
+                            {serviceTitle(current.id)}
                           </span>
                         </div>
 
@@ -1548,7 +1622,7 @@ export default function MerchantPage() {
                               Country
                             </span>
                             <span className="text-[11px] text-zinc-300">
-                              {countryConfig.name}
+                              {countryName(country)}
                             </span>
                           </div>
                         )}
@@ -1640,11 +1714,11 @@ export default function MerchantPage() {
                       </p>
 
                       <p className="mt-1 text-[14px] font-semibold">
-                        {current.title}
+                        {serviceTitle(current.id)}
                       </p>
 
                       <p className="mt-1 text-[11px] text-zinc-500">
-                        {current.description}
+                        {serviceDescription(current.id)}
                       </p>
                     </div>
 
@@ -1774,9 +1848,9 @@ export default function MerchantPage() {
 
               <div className="mt-4 space-y-3 rounded-2xl border border-[#2d2d2d] bg-[#202020] p-4 lg:mt-5 lg:p-5">
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">Service</span>
+                  <span className="text-[11px] text-zinc-600">{t("merchant", "service")}</span>
                   <span className="text-[12px] font-medium text-white">
-                    {current.title}
+                    {serviceTitle(current.id)}
                   </span>
                 </div>
 
@@ -1790,7 +1864,7 @@ export default function MerchantPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">Paid</span>
+                  <span className="text-[11px] text-zinc-600">{t("merchant", "paid")}</span>
                   <span className="text-[12px] font-semibold text-white">
                     {paymentEquivalents
                       ? `${paymentEquivalents[paymentAsset].toLocaleString(
@@ -1816,14 +1890,14 @@ export default function MerchantPage() {
                 <div className="h-px bg-[#2d2d2d]" />
 
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">Wallet</span>
+                  <span className="text-[11px] text-zinc-600">{t("merchant", "wallet")}</span>
                   <span className="max-w-[250px] truncate text-[11px] text-zinc-300">
                     {paymentReceiver || "Configured payment wallet"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[11px] text-zinc-600">Date</span>
+                  <span className="text-[11px] text-zinc-600">{t("merchant", "date")}</span>
                   <span className="text-[11px] text-zinc-300">
                     {confirmedAt}
                   </span>
@@ -1952,17 +2026,17 @@ export default function MerchantPage() {
             <header className="arivo-pdf-header">
               <div className="arivo-brand">
                 <img className="arivo-logo-image" src="/arivo-icon.png" alt="Arivo" />
-                <div className="arivo-brand-name">Arivo</div>
+                <div className="arivo-brand-name">{t("merchant", "arivo")}</div>
               </div>
 
-              <div className="arivo-paid-badge">PAID</div>
+              <div className="arivo-paid-badge">{t("merchant", "paidUpper")}</div>
             </header>
 
             <main className="arivo-pdf-content">
               <div className="arivo-pdf-title-row">
                 <div>
-                  <div className="arivo-eyebrow">PAYMENT RECEIPT</div>
-                  <h1>{current.title}</h1>
+                  <div className="arivo-eyebrow">{t("merchant", "paymentReceiptUpper")}</div>
+                  <h1>{serviceTitle(current.id)}</h1>
                   <p>
                     Receipt ID: ARV-
                     {txHash.slice(-6).toUpperCase()}
@@ -1973,14 +2047,14 @@ export default function MerchantPage() {
                 </div>
 
                 <div className="arivo-status">
-                  <span>STATUS</span>
-                  <strong>Confirmed</strong>
+                  <span>{t("merchant", "statusUpper")}</span>
+                  <strong>{t("merchant", "confirmed")}</strong>
                 </div>
               </div>
 
               <section className="arivo-total-card">
                 <div>
-                  <span>PAID</span>
+                  <span>{t("merchant", "paidUpper")}</span>
                   <strong>
                     {paymentEquivalents
                       ? `${paymentEquivalents[paymentAsset].toLocaleString(
@@ -1995,51 +2069,51 @@ export default function MerchantPage() {
                 </div>
 
                 <div className="arivo-total-side">
-                  <span>SERVICE AMOUNT</span>
+                  <span>{t("merchant", "serviceAmountUpper")}</span>
                   <strong>{orderPrice}</strong>
                 </div>
               </section>
 
               <section className="arivo-detail-card">
                 <div className="arivo-detail-row">
-                  <span>Network</span>
-                  <strong>Arc Testnet</strong>
+                  <span>{t("merchant", "network")}</span>
+                  <strong>{t("common", "testnet")}</strong>
                 </div>
 
                 <div className="arivo-detail-row">
-                  <span>Payment asset</span>
+                  <span>{t("merchant", "paymentAsset")}</span>
                   <strong>{paymentAsset}</strong>
                 </div>
 
                 <div className="arivo-detail-row">
-                  <span>Order status</span>
-                  <strong>Payment confirmed</strong>
+                  <span>{t("merchant", "orderStatus")}</span>
+                  <strong>{t("merchant", "paymentConfirmed")}</strong>
                 </div>
 
                 <div className="arivo-detail-row">
-                  <span>Network fee</span>
+                  <span>{t("merchant", "networkFee")}</span>
                   <strong>{networkFee} USDC</strong>
                 </div>
 
                 <div className="arivo-detail-row">
-                  <span>Purchase date</span>
+                  <span>{t("merchant", "purchaseDate")}</span>
                   <strong>{confirmedAt}</strong>
                 </div>
 
                 <div className="arivo-detail-row">
-                  <span>Wallet</span>
+                  <span>{t("merchant", "wallet")}</span>
                   <strong>{paymentReceiver}</strong>
                 </div>
 
                 {email && (
                   <div className="arivo-detail-row">
-                    <span>Receipt email</span>
+                    <span>{t("merchant", "receiptEmail")}</span>
                     <strong>{email}</strong>
                   </div>
                 )}
 
                 <div className="arivo-detail-row">
-                  <span>Email status</span>
+                  <span>{t("merchant", "emailStatus")}</span>
                   <strong>
                     {emailStatus === "sent"
                       ? "Confirmation sent"
@@ -2079,17 +2153,17 @@ export default function MerchantPage() {
 
               <section className="arivo-transaction-card">
                 <div>
-                  <div className="arivo-eyebrow">TRANSACTION</div>
+                  <div className="arivo-eyebrow">{t("merchant", "transactionUpper")}</div>
                   <div className="arivo-hash">{txHash}</div>
                 </div>
 
-                <div className="arivo-chain-badge">ON-CHAIN</div>
+                <div className="arivo-chain-badge">{t("merchant", "onChainUpper")}</div>
               </section>
 
               <section className="arivo-qr-section">
                 <div className="arivo-qr-copy">
-                  <div className="arivo-eyebrow">VERIFY PAYMENT</div>
-                  <h2>Scan to view transaction</h2>
+                  <div className="arivo-eyebrow">{t("merchant", "verifyPayment")}</div>
+                  <h2>{t("merchant", "scanToViewTransaction")}</h2>
                   <p>
                     This QR code opens the transaction directly on ArcScan.
                   </p>
@@ -2103,7 +2177,7 @@ export default function MerchantPage() {
                   src={`https://quickchart.io/qr?size=190&margin=1&text=${encodeURIComponent(
                     `https://testnet.arcscan.app/tx/${txHash}`
                   )}`}
-                  alt="QR code for the ArcScan transaction"
+                  alt={t("merchant", "qrAlt")}
                 />
               </section>
 
@@ -2111,14 +2185,14 @@ export default function MerchantPage() {
                 <div className="arivo-footer-brand">
                   <img className="arivo-footer-logo-image" src="/arivo-icon.png" alt="Arivo" />
                   <div>
-                    <strong>Arivo</strong>
-                    <span>Digital payment receipt</span>
+                    <strong>{t("merchant", "arivo")}</strong>
+                    <span>{t("merchant", "digitalPaymentReceipt")}</span>
                   </div>
                 </div>
 
                 <div className="arivo-footer-meta">
-                  <span>Built on Arc Testnet</span>
-                  <span>Transaction verified on-chain</span>
+                  <span>{t("merchant", "builtOnArcTestnet")}</span>
+                  <span>{t("merchant", "transactionVerified")}</span>
                 </div>
               </footer>
             </main>

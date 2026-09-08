@@ -7,6 +7,7 @@ import { getProfile } from "@/lib/profile";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 import {
   getCurrentChainId,
@@ -435,6 +436,7 @@ function Sidebar() {
 
 function ReceivePage() {
   const { user } = usePrivy();
+  const { t } = useI18n();
   const [asset, setAsset] = useState<Asset>("USDC");
   const [copied, setCopied] =
     useState<"wallet" | "arivo" | "">("");
@@ -471,7 +473,7 @@ function ReceivePage() {
   }
 
   function shortenAddress(address: string) {
-    if (!address) return "Not connected";
+    if (!address) return t("common", "notConnected");
 
     if (address.length < 14) return address;
 
@@ -499,11 +501,11 @@ function ReceivePage() {
 
           <div>
             <h1 className="text-[27px] font-semibold">
-              Receive
+              {t("common", "receive")}
             </h1>
 
             <p className="mt-1 text-[13px] text-zinc-500">
-              Receive USDC or EURC on Arc Testnet.
+              {t("common", "receiveUsdcOrEurc")}
             </p>
           </div>
         </header>
@@ -519,18 +521,18 @@ function ReceivePage() {
                 {/* TITLE */}
                 <div className="mb-6">
                   <h2 className="text-[19px] font-semibold">
-                    Receive funds
+                    {t("common", "receiveFunds")}
                   </h2>
 
                   <p className="mt-1 text-[13px] text-zinc-500">
-                    Share your wallet address or QR code to receive funds.
+                    {t("common", "shareWalletOrQr")}
                   </p>
                 </div>
 
                 {/* ASSET */}
                 <div>
                   <label className="mb-3 block text-[13px] text-zinc-400">
-                    Asset
+                    {t("common", "asset")}
                   </label>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -585,13 +587,13 @@ function ReceivePage() {
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(
                           qrValue
                         )}`}
-                        alt="Wallet QR Code"
+                        alt={t("common", "walletQrCode")}
                         className="h-[180px] w-[180px]"
                       />
                     </div>
 
                     <p className="mt-4 text-center text-[12px] text-zinc-500">
-                      Scan to receive
+                      {t("common", "scanToReceive")}
                     </p>
                   </div>
 
@@ -601,7 +603,7 @@ function ReceivePage() {
                     {/* Wallet */}
                     <div>
                       <label className="mb-3 block text-[13px] text-zinc-400">
-                        Wallet Address
+                        {t("common", "walletAddress")}
                       </label>
 
                       <div className="flex min-h-[62px] items-center gap-3 rounded-2xl border border-[#353535] bg-[#202020] px-5">
@@ -636,10 +638,10 @@ function ReceivePage() {
                       </div>
                     </div>
 
-                    {/* Arivo ID */}
+                    {/* {t("common", "arivoId")} */}
                     <div>
                       <label className="mb-3 block text-[13px] text-zinc-400">
-                        Arivo ID
+                        {t("common", "arivoId")}
                       </label>
 
                       <div className="flex min-h-[62px] items-center gap-3 rounded-2xl border border-[#353535] bg-[#202020] px-5">
@@ -675,7 +677,7 @@ function ReceivePage() {
                 <div className="mt-6 flex items-center justify-between rounded-2xl border border-[#353535] bg-[#202020] px-5 py-4">
                   <div>
                     <p className="text-[12px] text-zinc-500">
-                      Network
+                      {t("common", "network")}
                     </p>
 
                     <p className="mt-1 text-[14px] font-semibold text-white">
@@ -698,11 +700,11 @@ function ReceivePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-[17px] font-semibold text-white">
-                      Receive summary
+                      {t("common", "receiveSummary")}
                     </h2>
 
                     <p className="mt-1 text-[12px] text-zinc-600">
-                      Your receiving details
+                      {t("common", "yourReceivingDetails")}
                     </p>
                   </div>
 
@@ -717,7 +719,7 @@ function ReceivePage() {
                 <div className="mt-6 space-y-5">
                   <div className="flex items-center justify-between">
                     <span className="text-[13px] text-zinc-500">
-                      Asset
+                      {t("common", "asset")}
                     </span>
 
                     <span className="text-[13px] font-semibold text-white">
@@ -727,7 +729,7 @@ function ReceivePage() {
 
                   <div className="flex items-center justify-between gap-5">
                     <span className="text-[13px] text-zinc-500">
-                      Network
+                      {t("common", "network")}
                     </span>
 
                     <span className="text-[13px] font-semibold text-white">
@@ -737,7 +739,7 @@ function ReceivePage() {
 
                   <div className="flex items-center justify-between gap-5">
                     <span className="text-[13px] text-zinc-500">
-                      Address
+                      {t("common", "address")}
                     </span>
 
                     <span className="max-w-[180px] truncate text-right text-[12px] text-zinc-300">
@@ -755,11 +757,11 @@ function ReceivePage() {
 
                       <div>
                         <p className="text-[13px] font-semibold text-white">
-                          Ready to receive
+                          {t("common", "readyToReceive")}
                         </p>
 
                         <p className="mt-1 text-[11px] text-zinc-500">
-                          Share your address with the sender.
+                          {t("common", "shareAddressWithSender")}
                         </p>
                       </div>
                     </div>
@@ -779,11 +781,11 @@ function ReceivePage() {
 
                   <div>
                     <h3 className="text-[14px] font-semibold text-white">
-                      Secure receive
+                      {t("common", "secureReceive")}
                     </h3>
 
                     <p className="mt-1 text-[12px] leading-5 text-zinc-500">
-                      Only send {asset} on Arc Testnet to this wallet address.
+                      {t("common", "onlySendAssetOnArc").replace("{asset}", asset)}
                     </p>
                   </div>
                 </div>
@@ -796,7 +798,7 @@ function ReceivePage() {
                   </span>
 
                   <span className="ml-auto text-[11px] font-medium text-green-500">
-                    Connected
+                    {t("common", "connected")}
                   </span>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
@@ -12,8 +13,39 @@ export default function MobileBottomNav() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [quickActionsModalOpen, setQuickActionsModalOpen] =
+    useState(false);
+
   const isActive = (path: string) =>
     pathname === path || pathname.startsWith(`${path}/`);
+
+  useEffect(() => {
+    const handleQuickActionsModal = (event: Event) => {
+      const customEvent =
+        event as CustomEvent<{ open: boolean }>;
+
+      setQuickActionsModalOpen(
+        customEvent.detail?.open === true
+      );
+    };
+
+    window.addEventListener(
+      "arivo:quick-actions-modal",
+      handleQuickActionsModal
+    );
+
+    return () => {
+      window.removeEventListener(
+        "arivo:quick-actions-modal",
+        handleQuickActionsModal
+      );
+    };
+  }, []);
+
+  // Hide mobile bottom navigation while a Quick Action modal is open
+  if (quickActionsModalOpen) {
+    return null;
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-[90] border-t border-[#2b2b2b] bg-[#111111]/95 px-2 pb-[max(6px,env(safe-area-inset-bottom))] pt-1 backdrop-blur-lg lg:hidden">

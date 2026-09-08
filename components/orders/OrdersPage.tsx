@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
 import Sidebar from "@/components/layout/Sidebar";
 import {
   ArrowLeft,
@@ -62,19 +63,34 @@ function shorten(value: string) {
 }
 
 export default function OrdersPage() {
+  const { user } = usePrivy();
   const [orders, setOrders] = useState<ArivoOrder[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | ArivoOrderStatus>("all");
   const [selected, setSelected] = useState<ArivoOrder | null>(null);
 
-  const load = () => setOrders(getArivoOrders());
+  const load = () => {
+    const currentWallet = user?.wallet?.address?.toLowerCase();
+
+    if (!currentWallet) {
+      setOrders([]);
+      return;
+    }
+
+    setOrders(
+      getArivoOrders().filter(
+        (order) =>
+          order.ownerWalletAddress?.toLowerCase() === currentWallet
+      )
+    );
+  };
 
   useEffect(() => {
     load();
     const fn = () => load();
     window.addEventListener("arivo:orders-updated", fn);
     return () => window.removeEventListener("arivo:orders-updated", fn);
-  }, []);
+  }, [user?.wallet?.address]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

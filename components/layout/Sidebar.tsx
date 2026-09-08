@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getProfile } from "@/lib/profile";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n/useI18n";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   getCurrentChainId,
@@ -43,43 +43,44 @@ const ASSETS: Record<Asset, { name: string; logo: string }> = {
 
 const navigation = [
   {
-    name: "Dashboard",
+    name: "dashboard",
     href: "/dashboard",
     icon: Home,
   },
   {
-    name: "Send",
+    name: "send",
     href: "/send",
     icon: Send,
   },
   {
-    name: "Receive",
+    name: "receive",
     href: "/receive",
     icon: ArrowDownLeft,
   },
   {
-    name: "Transactions",
+    name: "transactions",
     href: "/transactions",
     icon: ReceiptText,
   },
   {
-    name: "Merchant",
+    name: "merchant",
     href: "/merchant",
     icon: Store,
   },
   {
-    name: "Contacts",
+    name: "contacts",
     href: "/contacts",
     icon: Users,
   },
   {
-    name: "Settings",
+    name: "settings",
     href: "/settings",
     icon: Settings,
   },
 ];
 
 function Sidebar() {
+  const { t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -496,11 +497,14 @@ function Sidebar() {
                     pathname.startsWith(`${item.href}/`));
 
                 return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setMobileSidebarOpen(false)}
-                    className={`flex h-[48px] items-center justify-between rounded-2xl px-4 transition-all duration-200 ${
+                  <button
+                    type="button"
+                    key={t("common", item.name)}
+                    onClick={() => {
+                      setMobileSidebarOpen(false);
+                      router.push(item.href);
+                    }}
+                    className={`flex h-[48px] w-full items-center justify-between rounded-2xl px-4 text-left transition-all duration-200 ${
                       isActive
                         ? "bg-[var(--arivo-primary)] text-black"
                         : "text-zinc-300 hover:bg-[#242424] hover:text-white"
@@ -510,7 +514,7 @@ function Sidebar() {
                       <Icon size={18} strokeWidth={2} />
 
                       <span className="text-[14px] font-medium">
-                        {item.name}
+                        {t("common", item.name)}
                       </span>
                     </div>
 
@@ -520,7 +524,7 @@ function Sidebar() {
                         strokeWidth={2.3}
                       />
                     )}
-                  </Link>
+                  </button>
                 );
               })}
             </nav>
@@ -533,7 +537,7 @@ function Sidebar() {
                     <p className="text-[14px] font-semibold text-white">
                       {isArcNetwork
                         ? "Arc Testnet"
-                        : "Wrong Network"}
+                        : t("common", "wrongNetwork")}
                     </p>
 
                     <p
@@ -544,10 +548,10 @@ function Sidebar() {
                       }`}
                     >
                       {loadingNetwork
-                        ? "Checking..."
+                        ? t("common", "checking")
                         : isArcNetwork
-                        ? "Connected"
-                        : "Please switch"}
+                        ? t("common", "connected")
+                        : t("common", "pleaseSwitch")}
                     </p>
                   </div>
 
@@ -609,10 +613,10 @@ function Sidebar() {
                   className="mt-4 flex h-10 w-full items-center justify-center rounded-xl bg-[var(--arivo-primary)] text-[12px] font-semibold text-black transition hover:bg-[var(--arivo-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {switchingNetwork
-                    ? "Switching..."
+                    ? t("common", "switching")
                     : isArcNetwork
-                    ? "View Explorer"
-                    : "Switch Network"}
+                    ? t("common", "viewExplorer")
+                    : t("common", "switchNetwork")}
                 </button>
               </div>
             </div>
@@ -680,7 +684,7 @@ function Sidebar() {
                       className="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-300 transition hover:bg-[#262626] hover:text-white"
                     >
                       <User size={16} />
-                      <span>Profile</span>
+                      <span>{t("common", "profile")}</span>
                     </button>
 
                     <button
@@ -693,7 +697,7 @@ function Sidebar() {
                       className="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-300 transition hover:bg-[#262626] hover:text-white"
                     >
                       <Settings size={16} />
-                      <span>Settings</span>
+                      <span>{t("common", "settings")}</span>
                     </button>
 
                     <button
@@ -702,7 +706,7 @@ function Sidebar() {
                       className="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-300 transition hover:bg-[#262626] hover:text-white"
                     >
                       <Shield size={16} />
-                      <span>Security</span>
+                      <span>{t("common", "security")}</span>
                     </button>
 
                     <div className="mx-4 border-t border-[#2b2b2b]" />
@@ -713,7 +717,7 @@ function Sidebar() {
                       className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-400 transition hover:bg-red-500/10"
                     >
                       <LogOut size={16} />
-                      <span>Sign out</span>
+                      <span>{t("common", "signOut")}</span>
                     </button>
                   </div>
                 )}
@@ -765,10 +769,11 @@ function Sidebar() {
               ));
 
           return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex h-[42px] items-center justify-between rounded-2xl px-4 transition-all duration-200 ${
+            <button
+              type="button"
+              key={t("common", item.name)}
+              onClick={() => router.push(item.href)}
+              className={`flex h-[42px] w-full items-center justify-between rounded-2xl px-4 text-left transition-all duration-200 ${
                 isActive
                   ? "bg-[var(--arivo-primary)] text-black"
                   : "text-zinc-400 hover:bg-[#242424] hover:text-white"
@@ -781,7 +786,7 @@ function Sidebar() {
                 />
 
                 <span className="text-[12px] font-medium">
-                  {item.name}
+                  {t("common", item.name)}
                 </span>
               </div>
 
@@ -791,7 +796,7 @@ function Sidebar() {
                   strokeWidth={2.3}
                 />
               )}
-            </Link>
+            </button>
           );
         })}
       </nav>
@@ -808,7 +813,7 @@ function Sidebar() {
               <p className="text-[13px] font-semibold text-white">
                 {isArcNetwork
                   ? "Arc Testnet"
-                  : "Wrong Network"}
+                  : t("common", "wrongNetwork")}
               </p>
 
               <p
@@ -819,10 +824,10 @@ function Sidebar() {
                 }`}
               >
                 {loadingNetwork
-                  ? "Checking..."
+                  ? t("common", "checking")
                   : isArcNetwork
-                  ? "Connected"
-                  : "Please switch"}
+                  ? t("common", "connected")
+                  : t("common", "pleaseSwitch")}
               </p>
             </div>
 
@@ -885,10 +890,10 @@ function Sidebar() {
   className="mt-4 flex h-9 w-full items-center justify-center rounded-xl bg-[var(--arivo-primary)] text-[12px] font-semibold text-black transition hover:bg-[var(--arivo-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
 >
   {switchingNetwork
-    ? "Switching..."
+    ? t("common", "switching")
     : isArcNetwork
-    ? "View Explorer"
-    : "Switch Network"}
+    ? t("common", "viewExplorer")
+    : t("common", "switchNetwork")}
 </button>
 
         </div>
@@ -973,21 +978,21 @@ function Sidebar() {
               className="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-300 transition hover:bg-[#262626] hover:text-white"
             >
               <User size={16} />
-              <span>Profile</span>
+              <span>{t("common", "profile")}</span>
             </button>
 
             <button
               className="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-300 transition hover:bg-[#262626] hover:text-white"
             >
               <Settings size={16} />
-              <span>Settings</span>
+              <span>{t("common", "settings")}</span>
             </button>
 
             <button
               className="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-300 transition hover:bg-[#262626] hover:text-white"
             >
               <Shield size={16} />
-              <span>Security</span>
+              <span>{t("common", "security")}</span>
             </button>
 
             <div className="mx-4 border-t border-[#2b2b2b]" />
@@ -997,7 +1002,7 @@ function Sidebar() {
               className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-400 transition hover:bg-red-500/10"
             >
               <LogOut size={16} />
-              <span>Sign out</span>
+              <span>{t("common", "signOut")}</span>
             </button>
 
           </div>

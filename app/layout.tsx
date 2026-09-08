@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "./providers";
 import { ToastProvider } from "@/components/toast/ToastProvider";
 import IncomingPaymentWatcher from "@/components/settings/IncomingPaymentWatcher";
+import I18nProvider from "@/lib/i18n/I18nProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,10 +20,10 @@ export const metadata: Metadata = {
   title: "Arivo",
   description: "Global USDC Accounts",
   icons: {
-  icon: "/arivo-favicon.png",
-  shortcut: "/arivo-favicon.png",
-  apple: "/arivo-favicon.png",
-},
+    icon: "/arivo-favicon.png",
+    shortcut: "/arivo-favicon.png",
+    apple: "/arivo-favicon.png",
+  },
 };
 
 export default function RootLayout({
@@ -36,12 +37,14 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ToastProvider>
-          <Providers>
-            <IncomingPaymentWatcher />
-            {children}
-          </Providers>
-        </ToastProvider>
+        <I18nProvider>
+          <ToastProvider>
+            <Providers>
+              <IncomingPaymentWatcher />
+              {children}
+            </Providers>
+          </ToastProvider>
+        </I18nProvider>
       </body>
     </html>
   );

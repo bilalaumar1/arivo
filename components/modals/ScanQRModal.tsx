@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Camera, ScanLine } from "lucide-react";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 type ScanQRModalProps = {
   open: boolean;
@@ -17,6 +18,8 @@ export default function ScanQRModal({
   onClose,
   onScan,
 }: ScanQRModalProps) {
+  const { t } = useI18n();
+
   const scannerRef = useRef<any>(null);
   const [error, setError] = useState("");
 
@@ -72,7 +75,10 @@ export default function ScanQRModal({
 
             if (!type) {
               setError(
-                "This QR code is not a valid Arivo ID or wallet address."
+                t(
+                  "common",
+                  "invalidArivoQR"
+                )
               );
               return;
             }
@@ -100,7 +106,10 @@ export default function ScanQRModal({
         );
 
         setError(
-          "Unable to access the camera. Please allow camera access."
+          t(
+            "common",
+            "cameraAccessError"
+          )
         );
       }
     }
@@ -126,7 +135,7 @@ export default function ScanQRModal({
           });
       }
     };
-  }, [open, onScan]);
+  }, [open, onScan, t]);
 
   if (!open) return null;
 
@@ -142,16 +151,17 @@ export default function ScanQRModal({
           <div>
 
             <h2 className="text-2xl font-bold text-white">
-              Scan QR
+              {t("common", "scanQR")}
             </h2>
 
             <p className="mt-2 text-sm text-zinc-500">
-              Scan an Arivo ID or wallet address.
+              {t("common", "scanQRDescription")}
             </p>
 
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="text-2xl text-zinc-500 transition hover:text-white"
           >
@@ -178,7 +188,7 @@ export default function ScanQRModal({
           <ScanLine size={17} />
 
           <span>
-            Point your camera at a QR code
+            {t("common", "pointCameraAtQR")}
           </span>
 
         </div>
@@ -198,7 +208,7 @@ export default function ScanQRModal({
           <Camera size={14} />
 
           <span>
-            Camera access is required
+            {t("common", "cameraAccessRequired")}
           </span>
 
         </div>

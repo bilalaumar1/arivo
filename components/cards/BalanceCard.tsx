@@ -10,6 +10,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { formatUnits } from "viem";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 import { getWalletBalance } from "@/lib/wallet";
 import { publicClient } from "@/lib/publicClient";
@@ -41,6 +42,7 @@ const erc20BalanceAbi = [
 type Asset = "USDC" | "EURC";
 
 export default function BalanceCard() {
+  const { t } = useI18n();
   const { user } = usePrivy();
   const { positions: earnPositions } = useEarnPosition();
 
@@ -199,7 +201,7 @@ export default function BalanceCard() {
           {/* Total Balance */}
 
           <p className="text-[13px] font-medium text-zinc-500">
-            Total Balance
+            {t("dashboard", "totalBalance")}
           </p>
 
           {/* =========================
@@ -337,8 +339,8 @@ export default function BalanceCard() {
               }
               aria-label={
                 showBalance
-                  ? "Hide balance"
-                  : "Show balance"
+                  ? t("dashboard", "hideBalance")
+                  : t("dashboard", "showBalance")
               }
               className="ml-1 mb-1 flex h-6 w-6 shrink-0 items-center justify-center text-zinc-500 transition hover:text-white lg:ml-0"
             >
@@ -370,7 +372,7 @@ export default function BalanceCard() {
             <div>
 
               <p className="text-[12px] text-zinc-500">
-                Available
+                {t("common", "available")}
               </p>
 
               <p className="mt-1 text-[16px] font-semibold text-white">
@@ -386,7 +388,7 @@ export default function BalanceCard() {
             <div>
 
               <p className="text-[12px] text-zinc-500">
-                On Hold
+                {t("common", "onHold")}
               </p>
 
               <p className="mt-1 text-[16px] font-semibold text-white">

@@ -6,6 +6,7 @@ import { formatUnits } from "viem";
 
 import { getWalletBalance } from "@/lib/wallet";
 import { publicClient } from "@/lib/publicClient";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const EURC_ADDRESS =
   "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as const;
@@ -32,6 +33,7 @@ const erc20BalanceAbi = [
 
 export default function PortfolioCard() {
   const { user } = usePrivy();
+  const { t } = useI18n();
 
   const [usdcBalance, setUsdcBalance] = useState("0");
   const [eurcBalance, setEurcBalance] = useState("0");
@@ -143,14 +145,14 @@ export default function PortfolioCard() {
       <div className="flex items-center justify-between">
 
         <h2 className="text-[17px] font-semibold text-white">
-          Portfolio
+          {t("common", "portfolio")}
         </h2>
 
         <button
           type="button"
           className="text-[13px] font-medium text-[#efe5d2] transition hover:text-white"
         >
-          Details
+          {t("common", "details")}
         </button>
 
       </div>
@@ -189,7 +191,7 @@ export default function PortfolioCard() {
             </h3>
 
             <p className="mt-0.5 text-[10px] text-zinc-500">
-              Total
+              {t("common", "total")}
             </p>
 
           </div>

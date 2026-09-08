@@ -1,6 +1,7 @@
 "use client";
 
 import { X, CircleDollarSign } from "lucide-react";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 type AddMoneyModalProps = {
   open: boolean;
@@ -11,6 +12,8 @@ export default function AddMoneyModal({
   open,
   onClose,
 }: AddMoneyModalProps) {
+  const { t } = useI18n();
+
   if (!open) return null;
 
   function handleGetTestUSDC() {
@@ -31,15 +34,16 @@ export default function AddMoneyModal({
 
           <div>
             <h2 className="text-3xl font-bold text-white">
-              Add Money
+              {t("common", "addMoney")}
             </h2>
 
             <p className="mt-2 text-sm text-zinc-500">
-              Get test USDC for your Arivo wallet on Arc Testnet.
+              {t("common", "addMoneyDescription")}
             </p>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="text-zinc-500 transition hover:text-white"
           >
@@ -65,11 +69,11 @@ export default function AddMoneyModal({
 
             <div>
               <h3 className="text-xl font-semibold text-white">
-                Get Test USDC
+                {t("common", "getTestUSDC")}
               </h3>
 
               <p className="mt-1 text-sm text-zinc-500">
-                Receive test USDC from the Circle Faucet.
+                {t("common", "getTestUSDCDescription")}
               </p>
             </div>
 
@@ -80,7 +84,7 @@ export default function AddMoneyModal({
           <div className="mt-7 rounded-2xl border border-[#2b2b2b] bg-[#181818] px-5 py-4">
 
             <p className="text-xs text-zinc-500">
-              Network
+              {t("common", "network")}
             </p>
 
             <p className="mt-1 text-base font-semibold text-white">
@@ -92,10 +96,11 @@ export default function AddMoneyModal({
           {/* Get USDC */}
 
           <button
+            type="button"
             onClick={handleGetTestUSDC}
             className="mt-7 h-14 w-full rounded-2xl bg-[var(--arivo-primary)] text-base font-semibold text-black transition hover:opacity-90"
           >
-            Get Test USDC
+            {t("common", "getTestUSDC")}
           </button>
 
         </div>
@@ -103,17 +108,17 @@ export default function AddMoneyModal({
         {/* Disclaimer */}
 
         <p className="mt-7 px-4 text-center text-xs leading-6 text-zinc-600">
-          Test USDC has no real-world value and is only used for
-          testing on Arc Testnet.
+          {t("common", "testUSDCDisclaimer")}
         </p>
 
         {/* Close */}
 
         <button
+          type="button"
           onClick={onClose}
           className="mt-7 h-14 w-full rounded-2xl border border-[#2b2b2b] text-base font-medium text-white transition hover:bg-[#202020]"
         >
-          Close
+          {t("common", "close")}
         </button>
 
       </div>

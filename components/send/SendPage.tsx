@@ -8,6 +8,7 @@ import { getProfileByArivoId } from "@/lib/profile";
 import { useToast } from "../toast/ToastProvider";
 import { publicClient } from "@/lib/publicClient";
 import { createNotification } from "@/lib/notifications";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 import {
   formatUnits,
@@ -53,6 +54,7 @@ const TOKEN_ADDRESSES = {
 export default function SendPage() {
   const { user } = usePrivy();
   const { success, error: toastError } = useToast();
+  const { t } = useI18n();
 
   const [method, setMethod] = useState<"arivo" | "wallet">("arivo");
 
@@ -289,18 +291,18 @@ export default function SendPage() {
     if (!recipient.trim()) {
       const message =
         method === "arivo"
-          ? "Please enter an Arivo ID."
-          : "Please enter a wallet address.";
+          ? t("common", "pleaseEnterArivoId")
+          : t("common", "pleaseEnterWalletAddress");
 
       setError(message);
-      toastError("Recipient required", message);
+      toastError(t("common", "recipientRequired"), message);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
-      const message = "Please enter a valid amount.";
+      const message = t("common", "pleaseEnterValidAmount");
       setError(message);
-      toastError("Invalid amount", message);
+      toastError(t("common", "invalidAmount"), message);
       return;
     }
 
@@ -309,7 +311,7 @@ export default function SendPage() {
         `Insufficient balance. Available: ${availableBalance} ${asset.symbol}.`;
 
       setError(message);
-      toastError("Insufficient balance", message);
+      toastError(t("common", "insufficientBalance"), message);
       return;
     }
 
@@ -323,16 +325,16 @@ export default function SendPage() {
           await getProfileByArivoId(arivoId);
 
         if (!foundProfile) {
-          const message = "Arivo ID not found.";
+          const message = t("common", "arivoIdNotFound");
           setError(message);
-          toastError("Recipient not found", message);
+          toastError(t("common", "recipientNotFound"), message);
           return;
         }
 
         if (!foundProfile.wallet) {
-          const message = "This Arivo ID has no wallet.";
+          const message = t("common", "arivoIdNoWallet");
           setError(message);
-          toastError("Recipient unavailable", message);
+          toastError(t("common", "recipientUnavailable"), message);
           return;
         }
 
@@ -349,9 +351,9 @@ export default function SendPage() {
           !walletAddress.startsWith("0x") ||
           walletAddress.length !== 42
         ) {
-          const message = "Invalid wallet address.";
+          const message = t("common", "invalidWalletAddress");
           setError(message);
-          toastError("Invalid wallet address", message);
+          toastError(t("common", "invalidWalletAddress"), message);
           return;
         }
       }
@@ -360,11 +362,10 @@ export default function SendPage() {
     } catch (error) {
       console.error("Recipient lookup failed:", error);
 
-      const message =
-        "Could not find the recipient. Please try again.";
+      const message = t("common", "recipientLookupFailed");
 
       setError(message);
-      toastError("Recipient lookup failed", message);
+      toastError(t("common", "recipientLookupFailed"), message);
     } finally {
       setLookingUp(false);
     }
@@ -384,9 +385,9 @@ export default function SendPage() {
 
       if (method === "arivo") {
         if (!recipientProfile) {
-          const message = "Recipient profile not found.";
+          const message = t("common", "recipientProfileNotFound");
           setError(message);
-          toastError("Recipient not found", message);
+          toastError(t("common", "recipientNotFound"), message);
           return;
         }
 
@@ -397,9 +398,9 @@ export default function SendPage() {
         !walletAddress.startsWith("0x") ||
         walletAddress.length !== 42
       ) {
-        const message = "Invalid wallet address.";
+        const message = t("common", "invalidWalletAddress");
         setError(message);
-        toastError("Invalid wallet address", message);
+        toastError(t("common", "invalidWalletAddress"), message);
         return;
       }
 
@@ -423,8 +424,8 @@ export default function SendPage() {
       );
 
       success(
-        `${asset.symbol} sent successfully`,
-        `${Number(amount).toFixed(2)} ${asset.symbol} was sent to the recipient.`
+        `${asset.symbol} ${t("common", "sentSuccessfully")}`,
+        `${Number(amount).toFixed(2)} ${asset.symbol} ${t("common", "wasSentToRecipient")}`
       );
 
       // Create a notification for the sender.
@@ -501,12 +502,12 @@ export default function SendPage() {
       console.error("Transaction failed:", error);
 
       setError(
-        `${asset.symbol} transaction failed. Please try again.`
+        `${asset.symbol} ${t("common", "transactionFailedTryAgain")}`
       );
 
       toastError(
-        `${asset.symbol} transaction failed`,
-        "Please try again."
+        `${asset.symbol} ${t("common", "transactionFailed")}`,
+        t("common", "pleaseTryAgain")
       );
 
       // Create a notification for the failed transaction.
@@ -558,11 +559,11 @@ export default function SendPage() {
 
         <div>
           <h1 className="text-[26px] font-semibold">
-            Send
+            {t("common", "title")}
           </h1>
 
           <p className="mt-1 text-[13px] text-zinc-500">
-            Send USDC or EURC on Arc Testnet.
+            {t("common", "subtitle")}
           </p>
         </div>
 
@@ -583,11 +584,11 @@ export default function SendPage() {
               <div className="mb-7">
 
                 <h2 className="text-[18px] font-semibold">
-                  Send funds
+                  {t("common", "sendFunds")}
                 </h2>
 
                 <p className="mt-1 text-[13px] text-zinc-500">
-                  Choose the recipient and amount.
+                  {t("common", "chooseRecipientAmount")}
                 </p>
 
               </div>
@@ -597,7 +598,7 @@ export default function SendPage() {
               <div>
 
                 <label className="mb-3 block text-[13px] text-zinc-400">
-                  Send to
+                  {t("common", "sendTo")}
                 </label>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -628,7 +629,7 @@ export default function SendPage() {
                           : "text-zinc-500"
                       }`}
                     >
-                      Send to another Arivo user
+                      {t("common", "sendToArivoUser")}
                     </p>
                   </button>
 
@@ -647,7 +648,7 @@ export default function SendPage() {
                     }`}
                   >
                     <p className="font-semibold">
-                      Wallet Address
+                      {t("common", "walletAddress")}
                     </p>
 
                     <p
@@ -657,7 +658,7 @@ export default function SendPage() {
                           : "text-zinc-500"
                       }`}
                     >
-                      Send directly to a wallet
+                      {t("common", "sendToWallet")}
                     </p>
                   </button>
 
@@ -670,7 +671,7 @@ export default function SendPage() {
               <div className="mt-7">
 
                 <label className="mb-3 block text-[13px] text-zinc-400">
-                  Asset
+                  {t("common", "asset")}
                 </label>
 
                 <div className="relative">
@@ -765,8 +766,8 @@ export default function SendPage() {
 
                 <label className="mb-3 block text-[13px] text-zinc-400">
                   {method === "arivo"
-                    ? "Arivo ID"
-                    : "Wallet Address"}
+                    ? t("common", "arivoId")
+                    : t("common", "walletAddress")}
                 </label>
 
                 <input
@@ -793,11 +794,11 @@ export default function SendPage() {
                 <div className="mb-3 flex items-center justify-between">
 
                   <label className="text-[13px] text-zinc-400">
-                    Amount
+                    {t("common", "amount")}
                   </label>
 
                   <span className="text-[12px] text-zinc-500">
-                    Available balance{" "}
+                    {t("common", "availableBalance")}{" "}
                     <span className="font-medium text-zinc-300">
                       {availableBalance} {asset.symbol}
                     </span>
@@ -830,7 +831,7 @@ export default function SendPage() {
                     onClick={handleMax}
                     className="text-[13px] font-semibold text-[#efe5d2] hover:text-white"
                   >
-                    MAX
+                    {t("common", "max")}
                   </button>
 
                 </div>
@@ -844,11 +845,11 @@ export default function SendPage() {
                 <div>
 
                   <p className="text-[12px] text-zinc-500">
-                    Network
+                    {t("common", "network")}
                   </p>
 
                   <p className="mt-1 text-[14px] font-semibold">
-                    Arc Testnet
+                    {t("common", "arcTestnet")}
                   </p>
 
                 </div>
@@ -879,7 +880,7 @@ export default function SendPage() {
                     : "cursor-not-allowed bg-[#55524d] text-[#292825]"
                 }`}
               >
-                {lookingUp ? "Checking..." : "Continue"}
+                {lookingUp ? t("common", "checking") : t("common", "continue")}
 
                 {!lookingUp && (
                   <span>→</span>
@@ -903,11 +904,11 @@ export default function SendPage() {
                 <div>
 
                   <h2 className="text-[17px] font-semibold text-white">
-                    Transfer summary
+                    {t("common", "transferSummary")}
                   </h2>
 
                   <p className="mt-1 text-[12px] text-zinc-600">
-                    Review your transfer details
+                    {t("common", "reviewTransferDetails")}
                   </p>
 
                 </div>
@@ -930,7 +931,7 @@ export default function SendPage() {
                 <div className="flex items-center justify-between gap-5">
 
                   <span className="text-[13px] text-zinc-500">
-                    Asset
+                    {t("common", "asset")}
                   </span>
 
                   <span className="text-[13px] font-semibold text-white">
@@ -944,11 +945,11 @@ export default function SendPage() {
                 <div className="flex items-center justify-between gap-5">
 
                   <span className="text-[13px] text-zinc-500">
-                    Recipient
+                    {t("common", "recipient")}
                   </span>
 
                   <span className="max-w-[190px] truncate text-right text-[13px] font-medium text-zinc-200">
-                    {recipient || "Not selected"}
+                    {recipient || t("common", "notSelected")}
                   </span>
 
                 </div>
@@ -958,7 +959,7 @@ export default function SendPage() {
                 <div className="flex items-center justify-between gap-5">
 
                   <span className="text-[13px] text-zinc-500">
-                    Amount
+                    {t("common", "amount")}
                   </span>
 
                   <span className="text-[13px] font-semibold text-white">
@@ -975,7 +976,7 @@ export default function SendPage() {
                 <div className="flex items-center justify-between gap-5">
 
                   <span className="text-[13px] text-zinc-500">
-                    Available balance
+                    {t("common", "availableBalance")}
                   </span>
 
                   <span className="text-[13px] font-medium text-zinc-300">
@@ -990,13 +991,13 @@ export default function SendPage() {
                 <div className="flex items-center justify-between gap-5">
 
                   <span className="text-[13px] text-zinc-500">
-                    Network fee
+                    {t("common", "networkFee")}
                   </span>
 
                   <span className="text-[13px] font-medium text-zinc-300">
 
                     {feeLoading
-                      ? "Estimating..."
+                      ? t("common", "estimating")
                       : networkFee === "—"
                         ? "—"
                         : `${networkFee} USDC`}
@@ -1012,7 +1013,7 @@ export default function SendPage() {
                   <div className="flex items-center justify-between gap-4">
 
                     <span className="text-[12px] text-zinc-500">
-                      You will send
+                      {t("common", "youWillSend")}
                     </span>
 
                     <span className="text-[16px] font-semibold text-white">
@@ -1046,11 +1047,11 @@ export default function SendPage() {
                 <div>
 
                   <h3 className="text-[14px] font-semibold text-white">
-                    Secure transfer
+                    {t("common", "secureTransfer")}
                   </h3>
 
                   <p className="mt-1 text-[12px] leading-5 text-zinc-500">
-                    Your transaction will be confirmed on Arc Testnet before completion.
+                    {t("common", "secureTransferDescription")}
                   </p>
 
                 </div>
@@ -1090,11 +1091,11 @@ export default function SendPage() {
             <div className="mb-6">
 
               <h2 className="text-[20px] font-semibold text-white">
-                Review transfer
+                {t("common", "reviewTransfer")}
               </h2>
 
               <p className="mt-1 text-[13px] text-zinc-500">
-                Check the details before confirming the transaction.
+                {t("common", "checkDetailsBeforeConfirming")}
               </p>
 
             </div>
@@ -1104,7 +1105,7 @@ export default function SendPage() {
               <div className="flex items-center justify-between">
 
                 <span className="text-[13px] text-zinc-500">
-                  Asset
+                  {t("common", "asset")}
                 </span>
 
                 <span className="text-[14px] font-semibold text-white">
@@ -1136,7 +1137,7 @@ export default function SendPage() {
                   <div className="flex items-center justify-between gap-5">
 
                     <span className="text-[13px] text-zinc-500">
-                      Wallet
+                      {t("common", "wallet")}
                     </span>
 
                     <span className="max-w-[260px] truncate text-right text-[11px] text-zinc-400">
@@ -1179,7 +1180,7 @@ export default function SendPage() {
                 }}
                 className="h-[54px] rounded-2xl border border-[#353535] bg-[#202020] font-semibold text-white transition hover:bg-[#292929]"
               >
-                Back
+                {t("common", "back")}
               </button>
 
               <button
@@ -1190,8 +1191,8 @@ export default function SendPage() {
               >
 
                 {loading
-                  ? "Sending..."
-                  : "Confirm & Send"}
+                  ? t("common", "sending")
+                  : t("common", "confirmSend")}
 
                 {!loading && (
                   <ArrowRight size={17} />

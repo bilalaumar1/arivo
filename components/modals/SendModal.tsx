@@ -17,6 +17,7 @@ import { getWalletBalance } from "@/lib/wallet";
 import { publicClient } from "@/lib/publicClient";
 import { formatUnits, type EIP1193Provider } from "viem";
 import { useToast } from "@/components/toast/ToastProvider";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 type SendMethod = "arivo" | "wallet";
 type Asset = "USDC" | "EURC";
@@ -186,6 +187,7 @@ export default function SendModal({
 }: SendModalProps) {
   const { user } = usePrivy();
   const { wallets } = useWallets();
+  const { t } = useI18n();
 
   const {
     success,
@@ -336,14 +338,14 @@ export default function SendModal({
     if (!recipient.trim()) {
       setError(
         sendMethod === "arivo"
-          ? "Please enter an Arivo ID."
-          : "Please enter a wallet address."
+          ? t("common", "pleaseEnterArivoId")
+          : t("common", "pleaseEnterWalletAddress")
       );
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
-      setError("Please enter a valid amount.");
+      setError(t("common", "pleaseEnterValidAmount"));
       return;
     }
 
@@ -352,7 +354,7 @@ export default function SendModal({
       Number(availableBalance)
     ) {
       setError(
-        `Insufficient ${selectedAsset} balance.`
+        `${t("common", "insufficientBalance")}: ${selectedAsset}`
       );
       return;
     }
@@ -375,13 +377,13 @@ export default function SendModal({
           await getProfileByArivoId(arivoId);
 
         if (!foundProfile) {
-          setError("Arivo ID not found.");
+          setError(t("common", "arivoIdNotFound"));
           return;
         }
 
         if (!foundProfile.wallet) {
           setError(
-            "This Arivo ID has no wallet."
+            t("common", "arivoIdNoWallet")
           );
           return;
         }
@@ -411,7 +413,7 @@ export default function SendModal({
           walletAddress.length !== 42
         ) {
           setError(
-            "Invalid wallet address."
+            t("common", "invalidWalletAddress")
           );
           return;
         }
@@ -425,7 +427,7 @@ export default function SendModal({
       );
 
       setError(
-        "Could not find the recipient. Please try again."
+        t("common", "recipientLookupFailed")
       );
     } finally {
       setLookingUp(false);
@@ -452,12 +454,12 @@ export default function SendModal({
       if (sendMethod === "arivo") {
         if (!recipientProfile) {
           const message =
-            "Recipient profile not found.";
+            t("common", "recipientProfileNotFound");
 
           setError(message);
 
           toastError(
-            "Recipient not found",
+            t("common", "recipientNotFound"),
             message
           );
 
@@ -477,12 +479,12 @@ export default function SendModal({
         walletAddress.length !== 42
       ) {
         const message =
-          "Invalid wallet address.";
+          t("common", "invalidWalletAddress");
 
         setError(message);
 
         toastError(
-          "Invalid wallet address",
+          t("common", "invalidWalletAddress"),
           message
         );
 
@@ -531,7 +533,7 @@ export default function SendModal({
 
       if (!transactionProvider) {
         throw new Error(
-          "Wallet provider not found. Please connect a wallet."
+          t("common", "walletProviderNotFound")
         );
       }
 
@@ -602,7 +604,7 @@ export default function SendModal({
 
       if (receipt.status !== "success") {
         throw new Error(
-          `${selectedAsset} transaction reverted`
+          `${selectedAsset} ${t("common", "transactionReverted")}`
         );
       }
 
@@ -611,7 +613,7 @@ export default function SendModal({
       // ------------------------------------------------------
 
       success(
-        `${selectedAsset} sent successfully`,
+        `${selectedAsset} ${t("common", "sentSuccessfully")}`,
         `${Number(amount).toFixed(
           2
         )} ${selectedAsset} was sent to the recipient.`
@@ -658,13 +660,13 @@ export default function SendModal({
       );
 
       setError(
-        `${selectedAsset} transaction failed.`
+        `${selectedAsset} ${t("common", "transactionFailed")}`
       );
 
       toastError(
-        `${selectedAsset} transaction failed`,
+        `${selectedAsset} ${t("common", "transactionFailed")}`,
         rawMessage ||
-          "Please try again."
+          t("common", "pleaseTryAgain")
       );
     } finally {
       setLoading(false);
@@ -729,7 +731,7 @@ export default function SendModal({
 
             <div className="flex items-center justify-between border-b border-[#292929] px-5 py-4 lg:px-7 lg:py-5">
               <h2 className="text-[22px] font-semibold tracking-tight text-white">
-                Send
+                {t("common", "send")}
               </h2>
 
               <button
@@ -750,8 +752,8 @@ export default function SendModal({
 
               <div className="mb-6">
                 <div className="mb-3">
-                  <p className="text-[13px] font-medium text-zinc-400">
-                    Send to
+                  <p className="text-[13px] font-medium text-zinc-400" >
+                    {t("common", "sendTo")}
                   </p>
                 </div>
 
@@ -771,8 +773,8 @@ export default function SendModal({
                         ? "bg-[#f3ead7] text-black"
                         : "text-zinc-400 hover:text-white"
                     }`}
-                  >
-                    Arivo ID
+                   >
+                    {t("common", "arivoId")}
                   </button>
 
                   <button
@@ -791,8 +793,8 @@ export default function SendModal({
                         ? "bg-[#f3ead7] text-black"
                         : "text-zinc-400 hover:text-white"
                     }`}
-                  >
-                    Wallet Address
+                   >
+                    {t("common", "walletAddress")}
                   </button>
 
                 </div>
@@ -801,8 +803,8 @@ export default function SendModal({
               {/* ASSET */}
 
               <div className="mb-5">
-                <label className="mb-2 block text-[13px] font-medium text-zinc-400">
-                  Asset
+                <label className="mb-2 block text-[13px] font-medium text-zinc-400" >
+                  {t("common", "asset")}
                 </label>
 
                 <div className="relative">
@@ -838,8 +840,8 @@ export default function SendModal({
                         <p className="mt-0.5 text-[12px] text-zinc-500">
                           {selectedAsset ===
                           "USDC"
-                            ? "USD Coin"
-                            : "Euro Coin"}
+                            ? t("common", "usdCoin")
+                            : t("common", "euroCoin")}
                         </p>
                       </div>
 
@@ -884,8 +886,8 @@ export default function SendModal({
                               USDC
                             </p>
 
-                            <p className="text-[11px] text-zinc-500">
-                              USD Coin
+                            <p className="text-[11px] text-zinc-500" >
+                              {t("common", "usdCoin")}
                             </p>
                           </div>
 
@@ -926,8 +928,8 @@ export default function SendModal({
                               EURC
                             </p>
 
-                            <p className="text-[11px] text-zinc-500">
-                              Euro Coin
+                            <p className="text-[11px] text-zinc-500" >
+                              {t("common", "euroCoin")}
                             </p>
                           </div>
 
@@ -955,8 +957,8 @@ export default function SendModal({
                 <div className="mb-2">
                   <label className="text-[13px] font-medium text-zinc-400">
                     {sendMethod === "arivo"
-                      ? "Arivo ID"
-                      : "Wallet address"}
+                      ? t("common", "arivoId")
+                      : t("common", "walletAddress")}
                   </label>
                 </div>
 
@@ -1006,13 +1008,12 @@ export default function SendModal({
 
                 <div className="mb-2 flex items-center justify-between">
 
-                  <label className="text-[13px] font-medium text-zinc-400">
-                    Amount
+                  <label className="text-[13px] font-medium text-zinc-400" >
+                    {t("common", "amount")}
                   </label>
 
                   <span className="text-[12px] text-zinc-500">
-                    Available:{" "}
-                    {Number(
+                    {t("common", "available")}: {Number(
                       availableBalance
                     ).toFixed(2)}{" "}
                     {selectedAsset}
@@ -1062,8 +1063,8 @@ export default function SendModal({
                         ) <= 0
                       }
                       className="rounded-md px-2 py-1 text-[12px] font-semibold text-[#f3ead7] transition hover:bg-[#303030] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      MAX
+                     >
+                      {t("common", "max")}
                     </button>
 
                   </div>
@@ -1077,17 +1078,17 @@ export default function SendModal({
                 <div className="flex items-center justify-between">
 
                   <div>
-                    <p className="text-[12px] text-zinc-500">
-                      Network
+                    <p className="text-[12px] text-zinc-500" >
+                      {t("common", "network")}
                     </p>
 
-                    <p className="mt-1 text-sm font-medium text-white">
-                      Arc Testnet
+                    <p className="mt-1 text-sm font-medium text-white" >
+                      {t("common", "arcTestnet")}
                     </p>
                   </div>
 
-                  <div className="rounded-lg bg-[#292929] px-2.5 py-1.5 text-[11px] font-medium text-zinc-400">
-                    Testnet
+                  <div className="rounded-lg bg-[#292929] px-2.5 py-1.5 text-[11px] font-medium text-zinc-400" >
+                    {t("common", "testnet")}
                   </div>
 
                 </div>
@@ -1120,8 +1121,8 @@ export default function SendModal({
                 className="flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-[#f3ead7] text-[15px] font-semibold text-black transition hover:bg-[#eadfc9] disabled:cursor-not-allowed disabled:bg-[#55524c] disabled:text-black/60"
               >
                 {lookingUp
-                  ? "Checking..."
-                  : "Continue"}
+                  ? t("common", "checking")
+                  : t("common", "continue")}
 
                 {!lookingUp && (
                   <ArrowRight size={17} />
@@ -1139,12 +1140,12 @@ export default function SendModal({
             <div className="flex items-center justify-between border-b border-[#292929] px-5 py-4 lg:px-7 lg:py-5">
 
               <div>
-                <h2 className="text-[22px] font-semibold text-white">
-                  Confirm Send
+                <h2 className="text-[22px] font-semibold text-white" >
+                  {t("common", "confirmSend")}
                 </h2>
 
                 <p className="mt-1 text-[12px] text-zinc-500">
-                  Review the transaction before sending.
+                  {t("common", "reviewTransactionBeforeSending")}
                 </p>
               </div>
 
@@ -1167,8 +1168,8 @@ export default function SendModal({
 
               <div className="mb-5 text-center">
 
-                <p className="text-[12px] text-zinc-500">
-                  You are sending
+                <p className="text-[12px] text-zinc-500" >
+                  {t("common", "youAreSending")}
                 </p>
 
                 <div className="mt-2 flex items-center justify-center gap-2">
@@ -1201,8 +1202,8 @@ export default function SendModal({
 
               <div className="rounded-xl border border-[#303030] bg-[#202020] p-4">
 
-                <p className="text-[12px] text-zinc-500">
-                  Recipient
+                <p className="text-[12px] text-zinc-500" >
+                  {t("common", "recipient")}
                 </p>
 
                 {sendMethod === "arivo" &&
@@ -1270,8 +1271,8 @@ export default function SendModal({
               recipientProfile && (
                 <div className="mt-3 rounded-xl border border-[#303030] bg-[#202020] p-4">
 
-                  <p className="text-[12px] text-zinc-500">
-                    Wallet
+                  <p className="text-[12px] text-zinc-500" >
+                    {t("common", "wallet")}
                   </p>
 
                   <p className="mt-1 text-sm text-zinc-300">
@@ -1312,8 +1313,8 @@ export default function SendModal({
                   onClick={handleBack}
                   disabled={loading}
                   className="h-[52px] flex-1 rounded-xl border border-[#303030] text-sm font-medium text-white transition hover:bg-[#242424] disabled:opacity-50"
-                >
-                  Back
+                 >
+                  {t("common", "back")}
                 </button>
 
                 <button
@@ -1325,8 +1326,8 @@ export default function SendModal({
                   className="h-[52px] flex-1 rounded-xl bg-[#f3ead7] text-sm font-semibold text-black transition hover:bg-[#eadfc9] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading
-                    ? "Sending..."
-                    : "Confirm & Send"}
+                    ? t("common", "sending")
+                    : t("common", "confirmAndSend")}
                 </button>
 
               </div>

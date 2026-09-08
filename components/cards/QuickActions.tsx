@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   ArrowUpRight,
@@ -15,44 +15,43 @@ import ReceiveModal from "@/components/modals/ReceiveModal";
 import ScanQRModal from "@/components/modals/ScanQRModal";
 import AddMoneyModal from "@/components/modals/AddMoneyModal";
 import ConvertModal from "@/components/modals/ConvertModal";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const actions = [
   {
-    title: "Send",
+    title: "send",
     icon: ArrowUpRight,
     active: true,
   },
   {
-    title: "Receive",
+    title: "receive",
     icon: ArrowDown,
     active: false,
   },
   {
-    title: "Scan QR",
+    title: "scanQR",
     icon: ScanLine,
     active: false,
   },
   {
-    title: "Add Money",
+    title: "addMoney",
     icon: CircleDollarSign,
     active: false,
   },
   {
-    title: "Convert",
+    title: "convert",
     icon: ArrowLeftRight,
     active: false,
   },
 ];
 
 export default function QuickActions() {
+  const { t } = useI18n();
+
   const [openSend, setOpenSend] = useState(false);
-
   const [openReceive, setOpenReceive] = useState(false);
-
   const [openScan, setOpenScan] = useState(false);
-
   const [openAddMoney, setOpenAddMoney] = useState(false);
-
   const [openConvert, setOpenConvert] = useState(false);
 
   const [scannedRecipient, setScannedRecipient] = useState("");
@@ -60,13 +59,35 @@ export default function QuickActions() {
   const [scannedMethod, setScannedMethod] =
     useState<"arivo" | "wallet">("arivo");
 
+  // ============================================================
+  // MOBILE BOTTOM NAV
+  // Hide MobileBottomNav while any Quick Action modal is open
+  // ============================================================
+
+  const anyModalOpen =
+    openSend ||
+    openReceive ||
+    openScan ||
+    openAddMoney ||
+    openConvert;
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("arivo:quick-actions-modal", {
+        detail: {
+          open: anyModalOpen,
+        },
+      })
+    );
+  }, [anyModalOpen]);
+
   return (
     <>
       {/* Title */}
 
       <h2 className="mb-4 mt-3 ml-5 text-[17px] font-semibold text-white lg:mb-5 lg:mt-0 lg:ml-0">
-  Quick Actions
-</h2>
+        {t("dashboard", "quickActions")}
+      </h2>
 
       {/* Actions */}
 
@@ -74,37 +95,59 @@ export default function QuickActions() {
         {actions.map((action) => {
           const Icon = action.icon;
 
+          let actionLabel = "";
+
+          if (action.title === "send") {
+            actionLabel = t("common", "send");
+          }
+
+          if (action.title === "receive") {
+            actionLabel = t("common", "receive");
+          }
+
+          if (action.title === "scanQR") {
+            actionLabel = t("common", "scanQR");
+          }
+
+          if (action.title === "addMoney") {
+            actionLabel = t("common", "addMoney");
+          }
+
+          if (action.title === "convert") {
+            actionLabel = t("common", "convert");
+          }
+
           return (
             <button
               key={action.title}
               onClick={() => {
                 {/* Send */}
 
-                if (action.title === "Send") {
+                if (action.title === "send") {
                   setOpenSend(true);
                 }
 
                 {/* Receive */}
 
-                if (action.title === "Receive") {
+                if (action.title === "receive") {
                   setOpenReceive(true);
                 }
 
                 {/* Scan QR */}
 
-                if (action.title === "Scan QR") {
+                if (action.title === "scanQR") {
                   setOpenScan(true);
                 }
 
                 {/* Add Money */}
 
-                if (action.title === "Add Money") {
+                if (action.title === "addMoney") {
                   setOpenAddMoney(true);
                 }
 
                 {/* Convert */}
 
-                if (action.title === "Convert") {
+                if (action.title === "convert") {
                   setOpenConvert(true);
                 }
               }}
@@ -125,7 +168,7 @@ export default function QuickActions() {
               </div>
 
               <span className="mt-2 whitespace-nowrap text-[11px] leading-tight text-zinc-300 lg:mt-3 lg:text-[13px] lg:leading-normal">
-                {action.title}
+                {actionLabel}
               </span>
             </button>
           );

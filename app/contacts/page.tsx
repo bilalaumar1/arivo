@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 import Sidebar from "@/components/layout/Sidebar";
 
@@ -104,6 +105,7 @@ function ContactAvatar({
 
 export default function ContactsPage() {
   const { user, ready, authenticated } = usePrivy();
+  const { t } = useI18n();
 
   const walletAddress = user?.wallet?.address ?? "";
 
@@ -342,7 +344,7 @@ export default function ContactsPage() {
     setArivoUser(null);
 
     if (!id) {
-      setArivoError("Enter an Arivo ID.");
+      setArivoError(t("common", "enterArivoId"));
       return;
     }
 
@@ -353,14 +355,14 @@ export default function ContactsPage() {
 
       if (!profile) {
         setArivoError(
-          "No Arivo user found with that ID."
+          t("common", "noArivoUserFound")
         );
         return;
       }
 
       if (!profile.wallet) {
         setArivoError(
-          "This Arivo user has no wallet."
+          t("common", "arivoUserNoWallet")
         );
         return;
       }
@@ -375,7 +377,7 @@ export default function ContactsPage() {
       console.error(err);
 
       setArivoError(
-        "Could not search Arivo right now."
+        t("common", "searchFailed")
       );
     } finally {
       setSearchingArivo(false);
@@ -385,7 +387,7 @@ export default function ContactsPage() {
   function saveArivoUser() {
     if (!walletAddress || !arivoUser) {
       setError(
-        "Connect your Arivo wallet first."
+        t("common", "connectWalletFirst")
       );
       return;
     }
@@ -398,7 +400,7 @@ export default function ContactsPage() {
 
     if (exists) {
       setError(
-        "This recipient is already saved."
+        t("common", "recipientAlreadySaved")
       );
       return;
     }
@@ -427,7 +429,7 @@ export default function ContactsPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to save contact."
+          : t("common", "unableToSaveContact")
       );
     }
   }
@@ -439,7 +441,7 @@ export default function ContactsPage() {
 
     if (!walletAddress) {
       setError(
-        "Connect your Arivo wallet first."
+        t("common", "connectWalletFirst")
       );
       return;
     }
@@ -449,14 +451,14 @@ export default function ContactsPage() {
       !manualAddress.trim()
     ) {
       setError(
-        "Complete the contact name and wallet address."
+        t("common", "completeContactDetails")
       );
       return;
     }
 
     if (!isValidWalletAddress(manualAddress)) {
       setError(
-        "Enter a valid Arc wallet address."
+        t("common", "invalidWalletAddress")
       );
       return;
     }
@@ -485,7 +487,7 @@ export default function ContactsPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to save contact."
+          : t("common", "unableToSaveContact")
       );
     }
   }
@@ -545,7 +547,7 @@ export default function ContactsPage() {
 
         <main className="flex min-h-screen min-w-0 flex-1 items-center justify-center">
           <p className="text-sm text-zinc-500">
-            Loading Arivo account...
+            {t("common", "loadingAccount")}
           </p>
         </main>
       </div>
@@ -568,19 +570,19 @@ export default function ContactsPage() {
                   window.history.back()
                 }
                 className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#303030] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525] hover:text-white"
-                aria-label="Go back"
+                aria-label={t("common", "back")}
               >
                 <ArrowLeft size={19} />
               </button>
 
               <div>
                 <h1 className="text-[26px] font-semibold">
-                  Contacts
+                  {t("common", "contacts")}
                 </h1>
 
                 <p className="mt-1 text-[13px] text-zinc-500">
-                  People on Arivo and trusted wallet
-                  addresses in one place.
+                  {t("common",
+                    "contactsPageDescription")}
                 </p>
               </div>
 
@@ -594,7 +596,7 @@ export default function ContactsPage() {
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--arivo-primary)] px-4 text-[12px] font-semibold text-black transition hover:bg-[var(--arivo-primary-hover)]"
             >
               <Plus size={16} />
-              Add contact
+              {t("common", "addContact")}
             </button>
           </header>
 
@@ -608,7 +610,7 @@ export default function ContactsPage() {
 
             <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-5">
               <p className="text-[10px] font-medium tracking-[0.16em] text-zinc-500">
-                SAVED CONTACTS
+                {t("common", "savedContacts").toUpperCase()}
               </p>
 
               <p className="mt-2 text-2xl font-semibold">
@@ -616,27 +618,27 @@ export default function ContactsPage() {
               </p>
 
               <p className="mt-1 text-xs text-zinc-600">
-                Reusable recipients
+                {t("common", "reusableRecipients")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-5">
               <p className="text-[10px] font-medium tracking-[0.16em] text-zinc-500">
-                ARIVO LOOKUP
+                {t("common", "arivoLookup").toUpperCase()}
               </p>
 
               <p className="mt-2 text-2xl font-semibold">
-                On demand
+                {t("common", "onDemand")}
               </p>
 
               <p className="mt-1 text-xs text-zinc-600">
-                Search only when you need someone
+                {t("common", "searchWhenNeeded")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-5">
               <p className="text-[10px] font-medium tracking-[0.16em] text-zinc-500">
-                FAVORITES
+                {t("common", "favorites").toUpperCase()}
               </p>
 
               <p className="mt-2 text-2xl font-semibold">
@@ -649,7 +651,7 @@ export default function ContactsPage() {
               </p>
 
               <p className="mt-1 text-xs text-zinc-600">
-                Frequent recipients
+                {t("common", "frequentRecipients")}
               </p>
             </div>
 
@@ -667,14 +669,14 @@ export default function ContactsPage() {
                   />
 
                   <h2 className="text-[15px] font-semibold">
-                    Find someone on Arivo
+                    {t("common", "findSomeoneOnArivo")}
                   </h2>
                 </div>
 
                 <p className="mt-1 text-[11px] text-zinc-600">
-                  Search only when you need a person.
-                  The full Arivo network is never
-                  rendered here.
+                  {t("common",
+                    "arivoSearchDescription"
+                  )}
                 </p>
               </div>
 
@@ -699,8 +701,8 @@ export default function ContactsPage() {
                   className="h-11 shrink-0 rounded-xl bg-[var(--arivo-primary)] px-4 text-xs font-semibold text-black disabled:opacity-60"
                 >
                   {searchingArivo
-                    ? "Searching..."
-                    : "Search"}
+                    ? t("common", "searching")
+                    : t("common", "search")}
                 </button>
               </form>
 
@@ -759,7 +761,7 @@ export default function ContactsPage() {
                       className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#303030] bg-[#202020] px-4 text-xs text-zinc-300 hover:bg-[#282828] hover:text-white"
                     >
                       <Send size={15} />
-                      Send
+                      {t("common", "send")}
                     </Link>
 
                     <button
@@ -768,7 +770,7 @@ export default function ContactsPage() {
                       className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--arivo-primary)] px-4 text-xs font-semibold text-black"
                     >
                       <Plus size={15} />
-                      Save contact
+                      {t("common", "saveContact")}
                     </button>
 
                   </div>
@@ -797,7 +799,7 @@ export default function ContactsPage() {
                       event.target.value
                     )
                   }
-                  placeholder="Search saved contacts, Arivo IDs or wallet addresses..."
+                  placeholder={t("common", "searchSavedPlaceholder")}
                   className="h-11 w-full rounded-xl border border-[#2b2b2b] bg-[#202020] pl-10 pr-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[#454545]"
                 />
 
@@ -816,7 +818,7 @@ export default function ContactsPage() {
                       : "text-zinc-500"
                   }`}
                 >
-                  All
+                  {t("common", "all")}
                 </button>
 
                 <button
@@ -830,7 +832,7 @@ export default function ContactsPage() {
                       : "text-zinc-500"
                   }`}
                 >
-                  Favorites
+                  {t("common", "favorites")}
                 </button>
 
               </div>
@@ -919,8 +921,8 @@ export default function ContactsPage() {
 
                           {copiedId ===
                           contact.id
-                            ? "Copied"
-                            : "Copy"}
+                            ? t("common", "copied")
+                            : t("common", "copy")}
                         </button>
 
                         <Link
@@ -936,7 +938,7 @@ export default function ContactsPage() {
                           className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--arivo-primary)] px-3 text-xs font-semibold text-black transition hover:bg-[var(--arivo-primary-hover)]"
                         >
                           <Send size={15} />
-                          Send
+                          {t("common", "send")}
                         </Link>
 
                         <div className="relative">
@@ -953,7 +955,7 @@ export default function ContactsPage() {
                               )
                             }
                             className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#303030] bg-[#202020] text-zinc-500 hover:bg-[#282828] hover:text-white"
-                            aria-label={`More options for ${contact.name}`}
+                            aria-label={`${t("common", "moreOptionsFor")} ${contact.name}`}
                           >
                             <MoreHorizontal
                               size={17}
@@ -983,8 +985,8 @@ export default function ContactsPage() {
                                 />
 
                                 {contact.favorite
-                                  ? "Remove from favorites"
-                                  : "Add to favorites"}
+                                  ? t("common", "removeFromFavorites")
+                                  : t("common", "addToFavorites")}
                               </button>
 
                               <button
@@ -997,7 +999,7 @@ export default function ContactsPage() {
                                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs text-zinc-300 hover:bg-[#282828] hover:text-white"
                               >
                                 <Copy size={15} />
-                                Copy wallet address
+                                {t("common", "copyWalletAddress")}
                               </button>
 
                               <Link
@@ -1016,7 +1018,7 @@ export default function ContactsPage() {
                                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs text-zinc-300 hover:bg-[#282828] hover:text-white"
                               >
                                 <Send size={15} />
-                                Send money
+                                {t("common", "send")} money
                               </Link>
 
                               <Link
@@ -1031,7 +1033,7 @@ export default function ContactsPage() {
                                 <MessageCircle
                                   size={15}
                                 />
-                                Message
+                                {t("common", "message")}
                               </Link>
 
                               <div className="my-1 border-t border-[#2b2b2b]" />
@@ -1048,7 +1050,7 @@ export default function ContactsPage() {
                                 <Trash2
                                   size={15}
                                 />
-                                Delete contact
+                                {t("common", "deleteContact")}
                               </button>
 
                             </div>
@@ -1076,8 +1078,8 @@ export default function ContactsPage() {
                 <h2 className="mt-5 text-base font-semibold">
                   {savedQuery ||
                   favoritesOnly
-                    ? "No matching contacts"
-                    : "No saved contacts yet"}
+                    ? t("common", "noMatchingContacts")
+                    : t("common", "noSavedContacts")}
                 </h2>
 
                 <p className="mt-2 max-w-md text-xs leading-5 text-zinc-600">
@@ -1105,11 +1107,11 @@ export default function ContactsPage() {
 
               <div>
                 <p className="text-[10px] font-medium tracking-[0.18em] text-zinc-500">
-                  RECIPIENT
+                  {t("common", "recipient").toUpperCase()}
                 </p>
 
                 <h2 className="mt-1 text-lg font-semibold">
-                  Add contact
+                  {t("common", "addContact")}
                 </h2>
               </div>
 
@@ -1117,7 +1119,7 @@ export default function ContactsPage() {
                 type="button"
                 onClick={closeModal}
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#2d2d2d] bg-[#202020] text-zinc-500 hover:text-white"
-                aria-label="Close"
+                aria-label={t("common", "close")}
               >
                 <X size={17} />
               </button>
@@ -1131,7 +1133,7 @@ export default function ContactsPage() {
 
               <div>
                 <label className="text-xs font-medium text-zinc-400">
-                  Contact name
+                  {t("common", "contactName")}
                 </label>
 
                 <input
@@ -1141,7 +1143,7 @@ export default function ContactsPage() {
                       event.target.value
                     )
                   }
-                  placeholder="e.g. Alice"
+                  placeholder={t("common", "contactNamePlaceholder")}
                   required
                   className="mt-2 h-11 w-full rounded-xl border border-[#303030] bg-[#202020] px-3 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-[#4b4b4b]"
                 />
@@ -1149,7 +1151,7 @@ export default function ContactsPage() {
 
               <div>
                 <label className="text-xs font-medium text-zinc-400">
-                  Recipient wallet address
+                  {t("common", "recipientWalletAddress")}
                 </label>
 
                 <input
@@ -1167,9 +1169,9 @@ export default function ContactsPage() {
 
               <div>
                 <label className="text-xs font-medium text-zinc-400">
-                  Note{" "}
+                  {t("common", "note")}{" "}
                   <span className="text-zinc-700">
-                    (optional)
+                    {t("common", "optional")}
                   </span>
                 </label>
 
@@ -1180,7 +1182,7 @@ export default function ContactsPage() {
                       event.target.value
                     )
                   }
-                  placeholder="e.g. Freelancer / supplier"
+                  placeholder={t("common", "notePlaceholder")}
                   className="mt-2 h-11 w-full rounded-xl border border-[#303030] bg-[#202020] px-3 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-[#4b4b4b]"
                 />
               </div>

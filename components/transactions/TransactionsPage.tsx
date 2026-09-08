@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
+import { useI18n } from "@/lib/i18n/useI18n";
 import {
   getAddressTransactions,
   Transaction as ExplorerTransaction,
@@ -19,7 +20,6 @@ import {
   Copy,
   ExternalLink,
   Filter,
-  ReceiptText,
   Wallet,
   X,
   Clock3,
@@ -46,11 +46,11 @@ const tabs: { label: string; value: Tab }[] = [
     value: "all",
   },
   {
-    label: "Sent",
+    label: "sent",
     value: "sent",
   },
   {
-    label: "Received",
+    label: "received",
     value: "received",
   },
 ];
@@ -126,6 +126,7 @@ function formatDate(timestamp: string | number) {
 
 export default function TransactionsPage() {
   const { user } = usePrivy();
+  const { t } = useI18n();
 
   const [transactions, setTransactions] = useState<
     DisplayTransaction[]
@@ -357,7 +358,7 @@ export default function TransactionsPage() {
                           : "text-zinc-400 hover:bg-[#242424] hover:text-white"
                       }`}
                     >
-                      {tab.label}
+                      {tab.value === "all" ? "All" : tab.value === "sent" ? t("common", "sent") : t("common", "received")}
 
                       {active && (
                         <Check size={14} />
@@ -452,7 +453,7 @@ export default function TransactionsPage() {
                             : "text-zinc-500 hover:text-white"
                         }`}
                       >
-                        {tab.label}
+                        {tab.value === "all" ? "All" : tab.value === "sent" ? t("common", "sent") : t("common", "received")}
                       </button>
                     );
                   })}
@@ -514,8 +515,8 @@ export default function TransactionsPage() {
                             <div className="min-w-0 flex-1">
                               <p className="text-[14px] font-semibold">
                                 {isSent
-                                  ? "Sent"
-                                  : "Received"}{" "}
+                                  ? t("common", "sent")
+                                  : t("common", "received")}{" "}
                                 {transaction.asset}
                               </p>
 
@@ -549,9 +550,9 @@ export default function TransactionsPage() {
                                         : "text-red-500"
                                   }`}
                                 >
-                                  {statusText(
-                                    transaction.status
-                                  )}
+                                  {transaction.status === "confirmed"
+                                    ? t("common", "confirmed")
+                                    : statusText(transaction.status)}
                                 </span>
                               </div>
                             </div>
