@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { X, Camera, ScanLine } from "lucide-react";
@@ -22,6 +22,39 @@ export default function ScanQRModal({
 
   const scannerRef = useRef<any>(null);
   const [error, setError] = useState("");
+
+  function translateWithFallback(
+    key: string,
+    fallback: string
+  ) {
+    const value = t("common", key);
+    return value === key ? fallback : value;
+  }
+
+  const scanQRDescription = translateWithFallback(
+    "scanQRDescription",
+    "Scan an Arivo ID or wallet address QR code."
+  );
+
+  const pointCameraAtQR = translateWithFallback(
+    "pointCameraAtQR",
+    "Point your camera at a QR code"
+  );
+
+  const cameraAccessRequired = translateWithFallback(
+    "cameraAccessRequired",
+    "Camera access is required to scan QR codes."
+  );
+
+  const invalidArivoQR = translateWithFallback(
+    "invalidArivoQR",
+    "Invalid Arivo QR code."
+  );
+
+  const cameraAccessError = translateWithFallback(
+    "cameraAccessError",
+    "Unable to access the camera."
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -74,12 +107,7 @@ export default function ScanQRModal({
             }
 
             if (!type) {
-              setError(
-                t(
-                  "common",
-                  "invalidArivoQR"
-                )
-              );
+              setError(invalidArivoQR);
               return;
             }
 
@@ -105,12 +133,7 @@ export default function ScanQRModal({
           err
         );
 
-        setError(
-          t(
-            "common",
-            "cameraAccessError"
-          )
-        );
+        setError(cameraAccessError);
       }
     }
 
@@ -135,66 +158,58 @@ export default function ScanQRModal({
           });
       }
     };
-  }, [open, onScan, t]);
+  }, [
+    open,
+    onScan,
+    invalidArivoQR,
+    cameraAccessError,
+  ]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-
-      <div className="w-full max-w-lg rounded-3xl border border-[#2b2b2b] bg-[#181818] p-7 shadow-2xl">
-
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-3 py-4 backdrop-blur-sm sm:p-4">
+      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[#2b2b2b] bg-[#181818] p-5 shadow-2xl sm:p-7">
         {/* Header */}
-
-        <div className="flex items-center justify-between">
-
-          <div>
-
-            <h2 className="text-2xl font-bold text-white">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold text-white sm:text-3xl">
               {t("common", "scanQR")}
             </h2>
 
-            <p className="mt-2 text-sm text-zinc-500">
-              {t("common", "scanQRDescription")}
+            <p className="mt-2 text-sm leading-5 text-zinc-500">
+              {scanQRDescription}
             </p>
-
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="text-2xl text-zinc-500 transition hover:text-white"
+            aria-label={t("common", "close")}
+            className="shrink-0 text-zinc-500 transition hover:text-white"
           >
-            <X size={24} />
+            <X size={22} />
           </button>
-
         </div>
 
         {/* Scanner */}
-
-        <div className="mt-7 overflow-hidden rounded-2xl border border-[#2b2b2b] bg-black">
-
+        <div className="mt-5 overflow-hidden rounded-2xl border border-[#2b2b2b] bg-black sm:mt-7">
           <div
             id="arivo-qr-reader"
-            className="min-h-[350px] w-full"
+            className="min-h-[280px] w-full sm:min-h-[350px]"
           />
-
         </div>
 
         {/* Scan icon */}
-
-        <div className="mt-5 flex items-center justify-center gap-2 text-sm text-zinc-500">
-
-          <ScanLine size={17} />
+        <div className="mt-4 flex items-center justify-center gap-2 px-2 text-center text-sm leading-5 text-zinc-500 sm:mt-5">
+          <ScanLine size={17} className="shrink-0" />
 
           <span>
-            {t("common", "pointCameraAtQR")}
+            {pointCameraAtQR}
           </span>
-
         </div>
 
         {/* Error */}
-
         {error && (
           <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
@@ -202,19 +217,14 @@ export default function ScanQRModal({
         )}
 
         {/* Camera info */}
-
-        <div className="mt-5 flex items-center justify-center gap-2 text-xs text-zinc-600">
-
-          <Camera size={14} />
+        <div className="mt-4 flex items-center justify-center gap-2 px-2 text-center text-xs leading-5 text-zinc-600 sm:mt-5">
+          <Camera size={14} className="shrink-0" />
 
           <span>
-            {t("common", "cameraAccessRequired")}
+            {cameraAccessRequired}
           </span>
-
         </div>
-
       </div>
-
     </div>
   );
 }
