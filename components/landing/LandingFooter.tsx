@@ -1,25 +1,114 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import type { MouseEvent } from "react";
 
 const productLinks = [
   ["Wallet", "#what-is-arivo"],
-  ["Earn", "#what-is-arivo"],
-  ["Payments", "#business"],
-  ["Arivo Pay", "/merchant"],
+  ["Earn", "/dashboard/earn"],
+  ["Payments", "/merchant"],
 ];
 
 const companyLinks = [
   ["About", "#what-is-arivo"],
-  ["Built on Arc", "#what-is-arivo"],
-  ["Community", "#resources"],
+  ["Built on Arc", "https://www.arc.io/"],
 ];
 
 const resourceLinks = [
-  ["FAQ", "#resources"],
+  ["FAQ", "#faq"],
   ["Support", "mailto:support@arivopay.xyz"],
 ];
 
 export default function LandingFooter() {
+  const handleFaqClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+
+    const exactFaq = document.getElementById("faq");
+
+    if (exactFaq) {
+      const headerOffset = 76;
+      const top =
+        exactFaq.getBoundingClientRect().top +
+        window.scrollY -
+        headerOffset;
+
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: "smooth",
+      });
+
+      window.history.replaceState(null, "", "#faq");
+      return;
+    }
+
+    // The current FAQ section may not have an id yet.
+    // Find its visible "FAQ" label and scroll to the surrounding section.
+    const faqLabel = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        "h1, h2, h3, h4, h5, h6, p, span"
+      )
+    ).find(
+      (element) =>
+        element.textContent?.trim().toLowerCase() === "faq"
+    );
+
+    const faqSection =
+      faqLabel?.closest<HTMLElement>("section") ?? faqLabel;
+
+    if (faqSection) {
+      const headerOffset = 76;
+      const top =
+        faqSection.getBoundingClientRect().top +
+        window.scrollY -
+        headerOffset;
+
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: "smooth",
+      });
+
+      window.history.replaceState(null, "", "#faq");
+      return;
+    }
+
+    // Extra fallback for the FAQ section shown on the landing page.
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>("section")
+    );
+
+    const fallbackSection =
+      sections.find((section) => {
+        const text = section.innerText
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+
+        return (
+          text.includes("all your questions answered") ||
+          text.includes("everything you need to know about using arivo")
+        );
+      }) ?? null;
+
+    if (fallbackSection) {
+      const headerOffset = 76;
+      const top =
+        fallbackSection.getBoundingClientRect().top +
+        window.scrollY -
+        headerOffset;
+
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: "smooth",
+      });
+
+      window.history.replaceState(null, "", "#faq");
+      return;
+    }
+
+    window.location.hash = "faq";
+  };
+
   return (
     <footer id="support" className="bg-[#F7F3EA] text-[#111111]">
       <div className="mx-auto w-full max-w-[1440px] px-5 py-14 sm:px-8 lg:px-12">
@@ -90,15 +179,27 @@ export default function LandingFooter() {
             </h3>
 
             <div className="mt-5 flex flex-col gap-3">
-              {companyLinks.map(([label, href]) => (
-                <a
-                  key={label}
-                  href={href}
-                  className="w-fit text-[14px] text-[#777168] transition hover:text-[#111111]"
-                >
-                  {label}
-                </a>
-              ))}
+              {companyLinks.map(([label, href]) =>
+                href.startsWith("https://") ? (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-fit text-[14px] text-[#777168] transition hover:text-[#111111]"
+                  >
+                    {label}
+                  </a>
+                ) : (
+                  <a
+                    key={label}
+                    href={href}
+                    className="w-fit text-[14px] text-[#777168] transition hover:text-[#111111]"
+                  >
+                    {label}
+                  </a>
+                )
+              )}
             </div>
           </div>
 
@@ -113,6 +214,9 @@ export default function LandingFooter() {
                 <a
                   key={label}
                   href={href}
+                  onClick={
+                    href === "#faq" ? handleFaqClick : undefined
+                  }
                   className="w-fit text-[14px] text-[#777168] transition hover:text-[#111111]"
                 >
                   {label}
@@ -127,11 +231,17 @@ export default function LandingFooter() {
           <span>© 2026 Arivo. All rights reserved.</span>
 
           <div className="flex gap-6">
-            <a href="#" className="hover:text-[#111111]">
+            <a
+              href="#"
+              className="transition hover:text-[#111111]"
+            >
               Terms of Service
             </a>
 
-            <a href="#" className="hover:text-[#111111]">
+            <a
+              href="#"
+              className="transition hover:text-[#111111]"
+            >
               Privacy Policy
             </a>
           </div>
