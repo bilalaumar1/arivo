@@ -131,18 +131,18 @@ function ToastItem({
     <div
       role={toast.type === "error" ? "alert" : "status"}
       aria-live={toast.type === "error" ? "assertive" : "polite"}
-      className="pointer-events-auto w-[min(420px,calc(100vw-32px))] overflow-hidden rounded-2xl border border-white/[0.10] bg-[#181818] shadow-[0_18px_50px_rgba(0,0,0,0.45)]"
+      className="pointer-events-auto w-[calc(100vw-24px)] max-w-[420px] overflow-hidden rounded-2xl border border-white/[0.10] bg-[#181818] shadow-[0_18px_50px_rgba(0,0,0,0.45)] sm:w-[420px]"
     >
       <div className="flex items-start gap-3 p-4">
         <ToastIcon type={toast.type} />
 
         <div className="min-w-0 flex-1 pt-0.5">
-          <p className="text-sm font-semibold leading-5 text-white">
+          <p className="truncate text-sm font-semibold leading-5 text-white">
             {toast.title}
           </p>
 
           {toast.message ? (
-            <p className="mt-1 text-sm leading-5 text-[#8E8E8E]">
+            <p className="mt-1 max-h-[100px] overflow-hidden text-sm leading-5 text-[#8E8E8E] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:5]">
               {toast.message}
             </p>
           ) : null}
@@ -270,7 +270,7 @@ export function ToastProvider({
       <div
         aria-live="polite"
         aria-atomic="false"
-        className="pointer-events-none fixed right-5 top-5 z-[99999] flex max-w-full flex-col items-end gap-3"
+        className="pointer-events-none fixed left-3 right-3 top-3 z-[99999] flex max-w-full flex-col items-stretch gap-3 sm:left-auto sm:right-5 sm:top-5 sm:items-end"
       >
         {toasts.map((toast) => (
           <ToastItem

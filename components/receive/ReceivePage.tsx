@@ -441,17 +441,51 @@ function ReceivePage() {
   const [copied, setCopied] =
     useState<"wallet" | "arivo" | "">("");
 
+  const connectedWalletAddress =
+    user?.wallet?.address ?? "";
+
   const walletAddress =
-    user?.wallet?.address ||
+    connectedWalletAddress ||
     "0x0000000000000000000000000000000000000000";
 
-  const arivoId = walletAddress
-    ? `ARV-${walletAddress
-        .slice(2, 6)
-        .toUpperCase()}-${walletAddress
-        .slice(-4)
-        .toUpperCase()}`
-    : "ARV-XXXX-XXXX";
+  const [arivoId, setArivoId] = useState("Loading...");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!connectedWalletAddress) {
+      setArivoId("");
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    async function loadArivoId() {
+      try {
+        const profile = await getProfile(
+          connectedWalletAddress
+        );
+
+        if (cancelled) return;
+
+        setArivoId(profile?.arivo_id ?? "");
+      } catch (error) {
+        if (!cancelled) {
+          console.error(
+            "Failed to load Arivo ID:",
+            error
+          );
+          setArivoId("");
+        }
+      }
+    }
+
+    void loadArivoId();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [connectedWalletAddress]);
 
   const qrValue = `${asset}:${walletAddress}`;
 

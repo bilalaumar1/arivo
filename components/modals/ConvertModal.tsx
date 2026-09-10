@@ -119,6 +119,11 @@ export default function ConvertModal({
     );
   }
 
+  function textWithFallback(key: string, fallback: string) {
+    const value = t("common", key);
+    return value === key ? fallback : value;
+  }
+
   const [fromCurrency, setFromCurrency] =
     useState<Currency>("USDC");
 
@@ -517,8 +522,8 @@ export default function ConvertModal({
       setTxHash(hash);
 
       toastSuccess(
-        t("common", "conversionSuccessful"),
-        translate(t("common", "conversionSuccessfulMessage"), { amount, from: fromCurrency, receive: receiveAmount, to: toCurrency })
+        t("common", "Conversion Successful"),
+        translate(t("common", "Conversion Successful Message"), { amount, from: fromCurrency, receive: receiveAmount, to: toCurrency })
       );
 
       window.dispatchEvent(
@@ -540,13 +545,23 @@ export default function ConvertModal({
         err
       );
 
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : t("common", "conversionFailed");
+      const rawErrorMessage =
+        err instanceof Error ? err.message : "";
+
+      const isUserRejected =
+        /user rejected|user denied|rejected the request|request rejected/i.test(
+          rawErrorMessage
+        );
+
+      const errorMessage = isUserRejected
+        ? "Transaction cancelled."
+        : t("common", "Conversion Failed");
 
       setError(errorMessage);
-      toastError(t("common", "conversionFailed"), errorMessage);
+      toastError(
+        t("common", "Conversion Failed"),
+        errorMessage
+      );
     } finally {
       setLoading(false);
     }
@@ -585,7 +600,7 @@ export default function ConvertModal({
 
             <div className="mt-8">
               <label className="mb-2 block text-sm text-zinc-400">
-                {t("common", "from")}
+                {textWithFallback("from", "From")}
               </label>
 
               <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-4">
@@ -593,7 +608,7 @@ export default function ConvertModal({
 
                   <div>
                     <p className="text-xs text-zinc-500">
-                      {t("common", "asset")}
+                      {textWithFallback("asset", "Asset")}
                     </p>
 
                     <div className="mt-1 flex items-center gap-2">
@@ -621,7 +636,7 @@ export default function ConvertModal({
 
                   <div className="text-right">
                     <p className="text-xs text-zinc-500">
-                      {t("common", "youSend")}
+                      {textWithFallback("youSend", "You send")}
                     </p>
 
                     <p className="mt-1 text-lg font-semibold text-white">
@@ -653,7 +668,7 @@ export default function ConvertModal({
 
             <div className="mt-5">
               <label className="mb-2 block text-sm text-zinc-400">
-                {t("common", "to")}
+                {textWithFallback("to", "To")}
               </label>
 
               <div className="rounded-2xl border border-[#2b2b2b] bg-[#202020] p-4">
@@ -661,7 +676,7 @@ export default function ConvertModal({
 
                   <div>
                     <p className="text-xs text-zinc-500">
-                      {t("common", "asset")}
+                      {textWithFallback("asset", "Asset")}
                     </p>
 
                     <div className="mt-1 flex items-center gap-2">
@@ -689,7 +704,7 @@ export default function ConvertModal({
 
                   <div className="text-right">
                     <p className="text-xs text-zinc-500">
-                      {t("common", "youReceive")}
+                      {textWithFallback("youReceive", "You receive")}
                     </p>
 
                     <p className="mt-1 text-lg font-semibold text-white">
@@ -705,7 +720,7 @@ export default function ConvertModal({
 
             <div className="mt-6">
               <label className="mb-2 block text-sm text-zinc-400">
-                {t("common", "amount")}
+                {textWithFallback("amount", "Amount")}
               </label>
 
               <div className="relative">
@@ -743,7 +758,7 @@ export default function ConvertModal({
               <div className="flex items-center justify-between">
 
                 <span className="text-sm text-zinc-500">
-                  {t("common", "previewRate")}
+                  {textWithFallback("previewRate", "Preview rate")}
                 </span>
 
                 <span className="text-sm font-medium text-white">
@@ -751,7 +766,7 @@ export default function ConvertModal({
                     ? `1 ${fromCurrency} ≈ ${previewRate.toFixed(
                         6
                       )} ${toCurrency}`
-                    : t("common", "enterAmount")}
+                    : t("common", "Enter Amount")}
                 </span>
 
               </div>
@@ -773,7 +788,7 @@ export default function ConvertModal({
                 onClick={handleClose}
                 className="h-12 flex-1 rounded-xl border border-[#2b2b2b] text-white hover:bg-[#202020]"
               >
-                {t("common", "cancel")}
+                {textWithFallback("cancel", "Cancel")}
               </button>
 
               <button
@@ -786,8 +801,8 @@ export default function ConvertModal({
                 className="h-12 flex-1 rounded-xl bg-[#efe5d2] font-semibold text-black hover:opacity-90 disabled:opacity-40"
               >
                 {loading
-                  ? t("common", "gettingQuote")
-                  : t("common", "reviewConversion")}
+                  ? t("common", "Getting Quote")
+                  : textWithFallback("reviewConversion", "Review conversion")}
               </button>
 
             </div>
@@ -804,11 +819,11 @@ export default function ConvertModal({
 
               <div>
                 <h2 className="text-2xl font-bold text-white">
-                  {t("common", "reviewConversion")}
+                  {textWithFallback("reviewConversion", "Review conversion")}
                 </h2>
 
                 <p className="mt-2 text-sm text-zinc-500">
-                  {t("common", "checkQuoteBeforeContinuing")}
+                  {textWithFallback("checkQuoteBeforeContinuing", "Check the quote before continuing.")}
                 </p>
               </div>
 
@@ -828,7 +843,7 @@ export default function ConvertModal({
 
                 <div>
                   <p className="text-xs text-zinc-500">
-                    {t("common", "youPay")}
+                    {textWithFallback("youPay", "You pay")}
                   </p>
 
                   <p className="mt-1 text-2xl font-semibold text-white">
@@ -903,7 +918,7 @@ export default function ConvertModal({
 
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-500">
-                  {t("common", "rate")}
+                  {textWithFallback("rate", "Rate")}
                 </span>
 
                 <span className="text-sm text-white">
@@ -917,7 +932,7 @@ export default function ConvertModal({
 
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-500">
-                  {t("common", "network")}
+                  {textWithFallback("network", "Network")}
                 </span>
 
                 <span className="text-sm text-white">
@@ -927,7 +942,7 @@ export default function ConvertModal({
 
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-500">
-                  {t("common", "route")}
+                  {textWithFallback("route", "Route")}
                 </span>
 
                 <span className="text-sm text-white">
@@ -956,7 +971,7 @@ export default function ConvertModal({
                 <ArrowLeft
                   size={17}
                 />
-                {t("common", "back")}
+                {textWithFallback("back", "Back")}
               </button>
 
               <button
@@ -968,7 +983,7 @@ export default function ConvertModal({
               >
                 {loading
                   ? t("common", "processing")
-                  : t("common", "confirmConversion")}
+                  : t("common", "Confirm Conversion")}
               </button>
 
             </div>
@@ -984,7 +999,7 @@ export default function ConvertModal({
             <div className="flex items-center justify-between">
 
               <h2 className="text-2xl font-bold text-white">
-                {t("common", "conversionComplete")}
+                {textWithFallback("conversionComplete", "Conversion complete")}
               </h2>
 
               <button
@@ -1019,12 +1034,12 @@ export default function ConvertModal({
                   rel="noopener noreferrer"
                   className="mt-5 text-sm text-[#efe5d2] underline underline-offset-4 hover:text-white"
                 >
-                  {t("common", "viewTransactionArcscan")}
+                  {textWithFallback("viewTransactionArcscan", "View transaction")}
                 </a>
               )}
 
               <p className="mt-5 text-sm text-zinc-500">
-                {t("common", "conversionConfirmedArc")}
+                {textWithFallback("conversionConfirmedArc", "Conversion confirmed on Arc.")}
               </p>
 
             </div>
@@ -1033,7 +1048,7 @@ export default function ConvertModal({
               onClick={handleClose}
               className="mt-8 h-12 w-full rounded-xl bg-[#efe5d2] font-semibold text-black hover:opacity-90"
             >
-              {t("common", "done")}
+              {textWithFallback("done", "Done")}
             </button>
 
           </>
