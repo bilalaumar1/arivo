@@ -1810,7 +1810,7 @@ export default function MerchantPage() {
 
       {paymentSuccess && current && (
         <div className="receipt-overlay fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-2 sm:p-4 backdrop-blur-sm">
-          <div className="receipt-card max-h-[92vh] w-full max-w-[420px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-[#333] bg-[#171717] shadow-2xl lg:max-h-none lg:max-w-[560px] lg:overflow-hidden lg:rounded-[26px]">
+          <div className="receipt-card max-h-[calc(100dvh-2rem)] w-full max-w-[420px] overflow-y-auto overflow-x-hidden overscroll-contain rounded-[24px] border border-[#333] bg-[#171717] shadow-2xl lg:max-w-[560px] lg:rounded-[26px]">
             <div className="border-b border-[#2b2b2b] px-4 py-4 text-center lg:px-6 lg:py-6">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
                 <Check
