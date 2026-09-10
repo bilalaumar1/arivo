@@ -17,6 +17,7 @@ import {
   Home,
   Send,
   ArrowDownLeft,
+  CircleDollarSign,
   ReceiptText,
   Store,
   Users,
@@ -58,6 +59,11 @@ const navigation = [
     icon: ArrowDownLeft,
   },
   {
+    name: "earn",
+    href: "/dashboard/earn",
+    icon: CircleDollarSign,
+  },
+  {
     name: "transactions",
     href: "/transactions",
     icon: ReceiptText,
@@ -71,11 +77,6 @@ const navigation = [
     name: "contacts",
     href: "/contacts",
     icon: Users,
-  },
-  {
-    name: "settings",
-    href: "/settings",
-    icon: Settings,
   },
 ];
 
@@ -493,8 +494,13 @@ function Sidebar() {
 
                 const isActive =
                   item.href !== "#" &&
-                  (pathname === item.href ||
-                    pathname.startsWith(`${item.href}/`));
+                  (
+                    pathname === item.href ||
+                    (
+                      item.href !== "/dashboard" &&
+                      pathname.startsWith(`${item.href}/`)
+                    )
+                  );
 
                 return (
                   <button
@@ -763,10 +769,13 @@ function Sidebar() {
 
           const isActive =
             item.href !== "#" &&
-            (pathname === item.href ||
-              pathname.startsWith(
-                `${item.href}/`
-              ));
+            (
+              pathname === item.href ||
+              (
+                item.href !== "/dashboard" &&
+                pathname.startsWith(`${item.href}/`)
+              )
+            );
 
           return (
             <button

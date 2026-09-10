@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
 import USDCSubscribePanel from "./USDCSubscribePanel";
 import EURCSubscribePanel from "./EURCSubscribePanel";
 import useEarnPosition from "@/lib/contracts/lending/useEarnPosition";
@@ -552,25 +553,29 @@ export default function EarnPage() {
 
       <main className="flex min-w-0 flex-1 flex-col">
         {/* HEADER */}
-        <header className="flex h-[88px] shrink-0 items-center border-b border-[#292929] px-6 sm:px-8">
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="mr-4 flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525] hover:text-white"
-            aria-label="Go back"
-          >
-            <ArrowLeft size={19} />
-          </button>
+        <header className="flex h-[88px] shrink-0 items-center justify-between border-b border-[#292929] px-6 sm:px-8">
+          <div className="flex shrink-0 items-center gap-4">
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525] hover:text-white"
+              aria-label="Go back"
+            >
+              <ArrowLeft size={19} />
+            </button>
 
-          <div>
-            <h1 className="text-[26px] font-semibold">
-              Earn
-            </h1>
+            <div>
+              <h1 className="text-[26px] font-semibold">
+                Earn
+              </h1>
 
-            <p className="mt-1 text-[13px] text-zinc-500">
-              Put your stablecoins to work on Arc Testnet.
-            </p>
+              <p className="mt-1 whitespace-nowrap text-[13px] text-zinc-500">
+                Put your stablecoins to work on Arc Testnet.
+              </p>
+            </div>
           </div>
+
+          <Topbar variant="actions" />
         </header>
 
         {/* CONTENT */}

@@ -419,7 +419,11 @@ function formatNotificationTime(
 // TOPBAR
 // ============================================================
 
-export default function Topbar() {
+export default function Topbar({
+  variant = "default",
+}: {
+  variant?: "default" | "actions";
+}) {
   const { user } = usePrivy();
   const router = useRouter();
 
@@ -1426,13 +1430,21 @@ export default function Topbar() {
   // ==========================================================
 
   return (
-    <header className="relative flex min-h-[139px] w-full items-start justify-between gap-3 border-b border-[#2b2b2b] bg-[#111111] px-5 py-4 lg:h-[76px] lg:min-h-0 lg:items-center lg:gap-0 lg:px-7 lg:py-0">
+    <header className={`relative flex ${
+      variant === "actions"
+        ? "h-auto min-h-0 w-auto shrink-0 items-center justify-end border-b-0 bg-transparent px-0 sm:h-[76px] sm:w-full sm:border-b sm:border-[#2b2b2b] sm:bg-[#111111] sm:px-7"
+        : "min-h-[139px] w-full items-start justify-between gap-3 border-b border-[#2b2b2b] bg-[#111111] px-5 py-4 lg:h-[76px] lg:min-h-0 lg:items-center lg:gap-0 lg:px-7 lg:py-0"
+    }`}>
 
       {/* ====================================================
           LEFT
       ==================================================== */}
 
-      <div className="min-w-0 flex-1">
+      <div
+        className={`min-w-0 flex-1 ${
+          variant === "actions" ? "hidden" : ""
+        }`}
+      >
         {/* Mobile brand row */}
         <div className="mb-3 flex items-center gap-2 lg:hidden">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#efe5d2]">
@@ -1491,22 +1503,13 @@ export default function Topbar() {
           RIGHT
       ==================================================== */}
 
-      <div className="absolute right-5 top-4 flex shrink-0 items-center gap-2 md:gap-3 lg:static">
-
-        {/* ==================================================
-            EARN
-        ================================================== */}
-        <button
-          type="button"
-          aria-label="Earn"
-          onClick={() => router.push("/dashboard/earn")}
-          className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-[#2b2b2b] bg-[#1a1a1a] text-zinc-400 transition-all duration-200 hover:border-[#3a3a3a] hover:bg-[#232323] hover:text-white lg:flex"
-        >
-          <ArrowUpRight
-            size={18}
-            strokeWidth={2}
-          />
-        </button>
+      <div
+        className={
+          variant === "actions"
+            ? "hidden lg:flex static shrink-0 items-center gap-2 md:gap-3"
+            : "absolute right-5 top-4 flex shrink-0 items-center gap-2 md:gap-3 lg:static"
+        }
+      >
 
         {/* ==================================================
             MESSAGES

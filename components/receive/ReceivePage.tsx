@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useI18n } from "@/lib/i18n/useI18n";
+import Topbar from "@/components/layout/Topbar";
 
 import {
   getCurrentChainId,
@@ -19,6 +20,7 @@ import {
   Home,
   Send,
   ArrowDownLeft,
+  CircleDollarSign,
   ReceiptText,
   Store,
   Users,
@@ -64,6 +66,11 @@ const navigation = [
     icon: ArrowDownLeft,
   },
   {
+    name: "Earn",
+    href: "/dashboard/earn",
+    icon: CircleDollarSign,
+  },
+  {
     name: "Transactions",
     href: "/transactions",
     icon: ReceiptText,
@@ -77,11 +84,6 @@ const navigation = [
     name: "Contacts",
     href: "/contacts",
     icon: Users,
-  },
-  {
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
   },
 ];
 
@@ -524,24 +526,28 @@ function ReceivePage() {
       <main className="relative z-0 min-w-0 w-full flex-1 overflow-x-hidden">
 
         {/* HEADER */}
-        <header className="flex h-[90px] items-center border-b border-[#292929] px-6 lg:px-9">
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="mr-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
-          >
-            <ArrowLeft size={19} />
-          </button>
+        <header className="flex h-[90px] items-center justify-between border-b border-[#292929] px-6 lg:px-9">
+          <div className="flex shrink-0 items-center gap-4">
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
+            >
+              <ArrowLeft size={19} />
+            </button>
 
-          <div>
-            <h1 className="text-[27px] font-semibold">
-              {t("common", "receive")}
-            </h1>
+            <div className="shrink-0">
+              <h1 className="text-[27px] font-semibold">
+                {t("common", "receive")}
+              </h1>
 
-            <p className="mt-1 text-[13px] text-zinc-500">
-              {t("common", "receiveUsdcOrEurc")}
-            </p>
+              <p className="mt-1 whitespace-nowrap text-[13px] text-zinc-500">
+                {t("common", "receiveUsdcOrEurc")}
+              </p>
+            </div>
           </div>
+
+          <Topbar variant="actions" />
         </header>
 
         {/* CONTENT */}

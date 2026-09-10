@@ -9,6 +9,7 @@ import {
 } from "@/lib/explorer";
 
 import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
 
 import {
   ArrowLeft,
@@ -19,7 +20,6 @@ import {
   ChevronRight,
   Copy,
   ExternalLink,
-  Filter,
   Wallet,
   X,
   Clock3,
@@ -136,9 +136,6 @@ export default function TransactionsPage() {
 
   const [activeTab, setActiveTab] =
     useState<Tab>("all");
-
-  const [showFilterMenu, setShowFilterMenu] =
-    useState(false);
 
   const [selectedTransaction, setSelectedTransaction] =
     useState<DisplayTransaction | null>(null);
@@ -320,55 +317,7 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() =>
-                setShowFilterMenu((current) => !current)
-              }
-              aria-expanded={showFilterMenu}
-              aria-haspopup="menu"
-              className="flex h-10 items-center gap-2 rounded-xl border border-[#333] bg-[#1c1c1c] px-4 text-[13px] text-zinc-300 transition hover:bg-[#242424]"
-            >
-              <Filter size={16} />
-              Filter
-            </button>
-
-            {showFilterMenu && (
-              <div
-                role="menu"
-                className="absolute right-0 top-12 z-50 min-w-[150px] overflow-hidden rounded-2xl border border-[#303030] bg-[#1b1b1b] p-1.5 shadow-2xl"
-              >
-                {tabs.map((tab) => {
-                  const active =
-                    activeTab === tab.value;
-
-                  return (
-                    <button
-                      key={tab.value}
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setActiveTab(tab.value);
-                        setShowFilterMenu(false);
-                      }}
-                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-[12px] transition ${
-                        active
-                          ? "bg-[#efe5d2] font-semibold text-black"
-                          : "text-zinc-400 hover:bg-[#242424] hover:text-white"
-                      }`}
-                    >
-                      {tab.value === "all" ? "All" : tab.value === "sent" ? t("common", "sent") : t("common", "received")}
-
-                      {active && (
-                        <Check size={14} />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <Topbar variant="actions" />
         </header>
 
         {/* CONTENT */}

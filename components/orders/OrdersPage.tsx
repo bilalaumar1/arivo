@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -127,26 +128,24 @@ export default function OrdersPage() {
 
       <main className="min-w-0 flex-1">
         <header className="flex min-h-[96px] items-center justify-between border-b border-[#292929] px-6 lg:px-8">
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-4">
             <button
               type="button"
               onClick={() => window.history.back()}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525] hover:text-white"
+              aria-label="Go back"
             >
               <ArrowLeft size={18} />
             </button>
             <div>
               <h1 className="text-[26px] font-semibold">Orders</h1>
-              <p className="mt-1 text-[13px] text-zinc-500">
+              <p className="mt-1 whitespace-nowrap text-[13px] text-zinc-500">
                 Track payment confirmation and service fulfillment.
               </p>
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-xl border border-[#303030] bg-[#191919] px-4 py-2 sm:flex">
-            <ShieldCheck size={15} className="text-green-500" />
-            <span className="text-[12px] text-zinc-300">Arc Testnet</span>
-          </div>
+          <Topbar variant="actions" />
         </header>
 
         <div className="p-6 lg:p-8">

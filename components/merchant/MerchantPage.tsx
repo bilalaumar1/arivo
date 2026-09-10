@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n/useI18n";
 import { useToast } from "@/components/toast/ToastProvider";
 import type { LucideIcon } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
 import { sendUSDC } from "@/lib/sendUSDC";
 import { sendEURC } from "@/lib/sendEURC";
 import { publicClient } from "@/lib/publicClient";
@@ -788,7 +789,7 @@ export default function MerchantPage() {
 
       <main className="relative z-0 min-w-0 flex-1 overflow-x-hidden">
         <header className="flex h-[88px] items-center justify-between border-b border-[#292929] px-6 lg:px-8">
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-4">
             <button
               type="button"
               onClick={() => window.history.back()}
@@ -802,12 +803,13 @@ export default function MerchantPage() {
               <h1 className="text-[26px] font-semibold">
                 Arivo Pay
               </h1>
-              <p className="mt-1 text-[13px] text-zinc-500">
+              <p className="mt-1 whitespace-nowrap text-[13px] text-zinc-500">
                 {t("merchant", "headerSubtitle")}
               </p>
             </div>
           </div>
 
+          <Topbar variant="actions" />
         </header>
 
         <div className="p-4 sm:p-6 lg:p-8">

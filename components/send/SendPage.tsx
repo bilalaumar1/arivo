@@ -9,6 +9,7 @@ import { useToast } from "../toast/ToastProvider";
 import { publicClient } from "@/lib/publicClient";
 import { createNotification } from "@/lib/notifications";
 import { useI18n } from "@/lib/i18n/useI18n";
+import Topbar from "@/components/layout/Topbar";
 
 import {
   formatUnits,
@@ -690,25 +691,29 @@ export default function SendPage() {
 
       {/* HEADER */}
 
-      <header className="flex h-[88px] items-center border-b border-[#292929] px-8">
+      <header className="flex h-[88px] items-center justify-between border-b border-[#292929] px-8">
 
-        <button
-          type="button"
-          onClick={() => window.history.back()}
-          className="mr-4 flex h-10 w-10 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
-        >
-          <ArrowLeft size={19} />
-        </button>
+        <div className="flex min-w-0 shrink-0 items-center">
+          <button
+            type="button"
+            onClick={() => window.history.back()}
+            className="mr-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#333] bg-[#1d1d1d] text-zinc-300 transition hover:bg-[#252525]"
+          >
+            <ArrowLeft size={19} />
+          </button>
 
-        <div>
-          <h1 className="text-[26px] font-semibold">
-            {t("common", "title")}
-          </h1>
+          <div className="min-w-0">
+            <h1 className="whitespace-nowrap text-[26px] font-semibold">
+              {t("common", "title")}
+            </h1>
 
-          <p className="mt-1 text-[13px] text-zinc-500">
-            {t("common", "subtitle")}
-          </p>
+            <p className="mt-1 whitespace-nowrap text-[13px] text-zinc-500">
+              {t("common", "subtitle")}
+            </p>
+          </div>
         </div>
+
+        <Topbar variant="actions" />
 
       </header>
 

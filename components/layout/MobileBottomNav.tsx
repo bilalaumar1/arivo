@@ -6,7 +6,7 @@ import {
   Home,
   ArrowUpRight,
   ArrowDown,
-  Landmark,
+  CircleDollarSign,
 } from "lucide-react";
 
 export default function MobileBottomNav() {
@@ -122,7 +122,7 @@ export default function MobileBottomNav() {
               : "text-zinc-500"
           }`}
         >
-          <Landmark size={20} strokeWidth={2} />
+          <CircleDollarSign size={20} strokeWidth={2} />
           <span className="text-[10px] font-medium">
             Earn
           </span>
