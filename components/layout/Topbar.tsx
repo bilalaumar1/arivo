@@ -1432,7 +1432,7 @@ export default function Topbar({
   return (
     <header className={`relative flex ${
       variant === "actions"
-        ? "h-auto min-h-0 w-auto shrink-0 items-center justify-end border-b-0 bg-transparent px-0 sm:h-[76px] sm:w-full sm:border-b sm:border-[#2b2b2b] sm:bg-[#111111] sm:px-7"
+        ? "h-auto min-h-0 w-auto shrink-0 items-center justify-end border-b-0 bg-transparent px-0"
         : "min-h-[139px] w-full items-start justify-between gap-3 border-b border-[#2b2b2b] bg-[#111111] px-5 py-4 lg:h-[76px] lg:min-h-0 lg:items-center lg:gap-0 lg:px-7 lg:py-0"
     }`}>
 
@@ -1503,13 +1503,7 @@ export default function Topbar({
           RIGHT
       ==================================================== */}
 
-      <div
-        className={
-          variant === "actions"
-            ? "hidden lg:flex static shrink-0 items-center gap-2 md:gap-3"
-            : "absolute right-5 top-4 flex shrink-0 items-center gap-2 md:gap-3 lg:static"
-        }
-      >
+      <div className={variant === "actions" ? "hidden lg:flex static shrink-0 items-center gap-2 md:gap-3" : "absolute right-5 top-4 flex shrink-0 items-center gap-2 md:gap-3 lg:static"}>
 
         {/* ==================================================
             MESSAGES
